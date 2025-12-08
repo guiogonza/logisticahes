@@ -764,67 +764,104 @@
       }
     });
 
-    // Funciones para persistencia de datos
-    function saveDataToStorage(data, fileName) {
+    // Funciones para persistencia de datos usando IndexedDB (soporta archivos grandes)
+    const DB_NAME = 'hesego_db';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'excel_data';
+    
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+      });
+    }
+    
+    async function saveDataToStorage(data, fileName) {
       try {
-        // Preparar datos para guardar (sin objetos Date que no se serializan bien)
+        // Preparar datos para guardar (sin objetos Date)
         const dataToSave = data.map(row => {
           const newRow = { ...row };
-          delete newRow.__date; // Eliminar Date, se recalculará al cargar
+          delete newRow.__date;
           return newRow;
         });
         
-        const jsonData = JSON.stringify(dataToSave);
-        const sizeKB = (jsonData.length / 1024).toFixed(2);
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
         
-        // localStorage tiene límite de ~5MB
-        if (jsonData.length > 4 * 1024 * 1024) {
-          console.warn(`Datos muy grandes (${sizeKB} KB), no se guardarán en localStorage`);
-          setStatus(`Archivo cargado. Registros: ${data.length}. (Muy grande para guardar en memoria)`);
-          return;
-        }
+        // Guardar datos
+        store.put({
+          id: 'main_data',
+          data: dataToSave,
+          fileName: fileName,
+          savedAt: new Date().toISOString(),
+          recordCount: data.length
+        });
         
-        localStorage.setItem('hesego_data', jsonData);
-        localStorage.setItem('hesego_fileName', fileName);
-        localStorage.setItem('hesego_savedAt', new Date().toISOString());
-        console.log(`Datos guardados en memoria local (${sizeKB} KB, ${data.length} registros)`);
+        transaction.oncomplete = () => {
+          console.log(`✅ Datos guardados: ${data.length} registros`);
+          db.close();
+        };
+        
+        transaction.onerror = () => {
+          console.warn('Error guardando datos:', transaction.error);
+          db.close();
+        };
+        
       } catch (e) {
-        console.warn('No se pudo guardar en localStorage:', e.message);
-        // Limpiar si hay error de cuota
-        if (e.name === 'QuotaExceededError') {
-          localStorage.removeItem('hesego_data');
-          setStatus(`Archivo cargado. Registros: ${data.length}. (Memoria llena, datos no persistidos)`);
-        }
+        console.warn('No se pudo guardar en IndexedDB:', e.message);
       }
     }
     
-    function loadDataFromStorage() {
+    async function loadDataFromStorage() {
       try {
-        const savedData = localStorage.getItem('hesego_data');
-        const savedFileName = localStorage.getItem('hesego_fileName');
+        console.log('Buscando datos guardados...');
         
-        console.log('Buscando datos guardados...', savedData ? 'Encontrados' : 'No hay datos');
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get('main_data');
         
-        if (savedData) {
-          rawData = JSON.parse(savedData);
+        request.onsuccess = () => {
+          const result = request.result;
+          db.close();
           
-          // Recalcular fechas
-          rawData.forEach(row => {
-            const d = parseDate(row[DATE_COL]);
-            row.__date = d;
-            row.__dateStr = d ? formatDateISO(d) : null;
-          });
-          
-          console.log(`Datos restaurados: ${rawData.length} registros`);
-          setStatus(`Datos restaurados: ${rawData.length} registros. Archivo: "${savedFileName || 'desconocido'}"`);
-          
-          initFilters();
-          applyFilters();
-        } else {
-          console.log('No hay datos guardados previamente');
-        }
+          if (result && result.data) {
+            rawData = result.data;
+            
+            // Recalcular fechas
+            rawData.forEach(row => {
+              const d = parseDate(row[DATE_COL]);
+              row.__date = d;
+              row.__dateStr = d ? formatDateISO(d) : null;
+            });
+            
+            console.log(`✅ Datos restaurados: ${rawData.length} registros`);
+            setStatus(`Datos restaurados: ${rawData.length} registros. Archivo: "${result.fileName || 'desconocido'}"`);
+            
+            initFilters();
+            applyFilters();
+          } else {
+            console.log('No hay datos guardados previamente');
+          }
+        };
+        
+        request.onerror = () => {
+          console.warn('Error leyendo datos:', request.error);
+          db.close();
+        };
+        
       } catch (e) {
-        console.warn('No se pudo cargar desde localStorage:', e.message);
+        console.warn('No se pudo cargar desde IndexedDB:', e.message);
       }
     }
 
