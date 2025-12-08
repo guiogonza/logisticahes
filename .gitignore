@@ -1,0 +1,5 @@
+# Archivos a ignorar
+*.log
+.DS_Store
+Thumbs.db
+logisticahesego.com.nginx

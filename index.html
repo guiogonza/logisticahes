@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HESEGO - Portal de Reportes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(135deg, #1c4e80 0%, #0a2540 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 1rem;
+    }
+    
+    .header h1 {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .header p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.1rem;
+    }
+    
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      width: 100%;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-icon.blue {
+      background: linear-gradient(135deg, #1c4e80, #2d6da8);
+      color: white;
+    }
+    
+    .card-icon.green {
+      background: linear-gradient(135deg, #0d9488, #14b8a6);
+      color: white;
+    }
+    
+    .card-icon.purple {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+    }
+    
+    .card h2 {
+      font-size: 1.4rem;
+      color: #1a1a2e;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card p {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      flex-grow: 1;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-features {
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-features li {
+      color: #555;
+      font-size: 0.85rem;
+      padding: 0.3rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card-features li::before {
+      content: "✓";
+      color: #0d9488;
+      font-weight: bold;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #1c4e80, #2d6da8);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #15406a, #246090);
+      transform: scale(1.02);
+    }
+    
+    .btn-green {
+      background: linear-gradient(135deg, #0d9488, #14b8a6);
+      color: white;
+    }
+    
+    .btn-green:hover {
+      background: linear-gradient(135deg, #0a7d73, #0d9488);
+      transform: scale(1.02);
+    }
+    
+    .btn-purple {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+    }
+    
+    .btn-purple:hover {
+      background: linear-gradient(135deg, #6d28d9, #7c3aed);
+      transform: scale(1.02);
+    }
+    
+    .footer {
+      margin-top: 3rem;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+    }
+    
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8rem;
+      }
+      
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="img/logo.png" alt="HESEGO Logo" class="logo" />
+    <h1>Portal de Reportes</h1>
+    <p>Accede a los dashboards de inteligencia de negocios</p>
+  </div>
+  
+  <div class="cards-container">
+    <!-- Card 1: Reporte Power BI 1 -->
+    <div class="card">
+      <div class="card-icon blue">📊</div>
+      <h2>Dashboard Operativo Principal</h2>
+      <p>
+        Visualiza los indicadores clave de operación, métricas de rendimiento 
+        y análisis detallado del desempeño operativo de la flota.
+      </p>
+      <ul class="card-features">
+        <li>Indicadores de operación en tiempo real</li>
+        <li>Análisis por sede y vehículo</li>
+        <li>Tendencias y proyecciones</li>
+      </ul>
+      <a href="https://app.powerbi.com/groups/eaf13eec-7218-4feb-b698-2f169aa27417/reports/b01a51f9-739f-41b1-9b94-cb780725266d/0b0576686a6f016f1211?experience=power-bi" 
+         target="_blank" 
+         class="btn btn-primary">
+        <span>📈</span> Abrir Dashboard
+      </a>
+    </div>
+    
+    <!-- Card 2: Reporte Power BI 2 -->
+    <div class="card">
+      <div class="card-icon green">📋</div>
+      <h2>Dashboard de Gestión</h2>
+      <p>
+        Monitorea la gestión administrativa, control de mantenimientos, 
+        y seguimiento de estados de los vehículos de la flota.
+      </p>
+      <ul class="card-features">
+        <li>Control de mantenimientos</li>
+        <li>Gestión de siniestros</li>
+        <li>Reportes administrativos</li>
+      </ul>
+      <a href="https://app.powerbi.com/groups/eaf13eec-7218-4feb-b698-2f169aa27417/reports/e6c3c32a-c8b5-4f82-879e-5943ebb942e7/8b1891c1da81dabed2f1?experience=power-bi" 
+         target="_blank" 
+         class="btn btn-green">
+        <span>📑</span> Abrir Dashboard
+      </a>
+    </div>
+    
+    <!-- Card 3: Reporte Local (app.html) -->
+    <div class="card">
+      <div class="card-icon purple">🚗</div>
+      <h2>Operatividad de Vehículos</h2>
+      <p>
+        Analiza la operatividad diaria de vehículos desde archivos Excel. 
+        Filtros interactivos, gráficas y tabla de detalle.
+      </p>
+      <ul class="card-features">
+        <li>Carga de archivos Excel</li>
+        <li>Filtros por sede, estado y placa</li>
+        <li>Gráficas interactivas con click</li>
+        <li>Ordenamiento de tabla</li>
+      </ul>
+      <a href="app.html" class="btn btn-purple">
+        <span>🔍</span> Abrir Reporte
+      </a>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>© 2025 HESEGO Ingeniería S.A.S. - Todos los derechos reservados</p>
+  </div>
+</body>
+</html>
