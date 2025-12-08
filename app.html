@@ -558,6 +558,9 @@
     // Eventos para filtrado automático
     sedeFilterEl.addEventListener("change", onSedeChange);
     estadoFilterEl.addEventListener("change", onEstadoChange);
+    
+    // Cargar datos guardados al iniciar
+    loadDataFromStorage();
     placaFilterEl.addEventListener("change", onPlacaChange);
     
     // Nombres de meses
@@ -759,6 +762,50 @@
       }
     });
 
+    // Funciones para persistencia de datos
+    function saveDataToStorage(data, fileName) {
+      try {
+        // Preparar datos para guardar (sin objetos Date que no se serializan bien)
+        const dataToSave = data.map(row => {
+          const newRow = { ...row };
+          delete newRow.__date; // Eliminar Date, se recalculará al cargar
+          return newRow;
+        });
+        
+        localStorage.setItem('hesego_data', JSON.stringify(dataToSave));
+        localStorage.setItem('hesego_fileName', fileName);
+        localStorage.setItem('hesego_savedAt', new Date().toISOString());
+        console.log('Datos guardados en memoria local');
+      } catch (e) {
+        console.warn('No se pudo guardar en localStorage:', e);
+      }
+    }
+    
+    function loadDataFromStorage() {
+      try {
+        const savedData = localStorage.getItem('hesego_data');
+        const savedFileName = localStorage.getItem('hesego_fileName');
+        
+        if (savedData) {
+          rawData = JSON.parse(savedData);
+          
+          // Recalcular fechas
+          rawData.forEach(row => {
+            const d = parseDate(row[DATE_COL]);
+            row.__date = d;
+            row.__dateStr = d ? formatDateISO(d) : null;
+          });
+          
+          setStatus(`Datos restaurados: ${rawData.length} registros. Archivo: "${savedFileName || 'desconocido'}"`);
+          
+          initFilters();
+          applyFilters();
+        }
+      } catch (e) {
+        console.warn('No se pudo cargar desde localStorage:', e);
+      }
+    }
+
     function setStatus(msg) {
       statusEl.textContent = msg || "";
     }
@@ -827,6 +874,9 @@
           row.__date = d; // guardamos la Date calculada
           row.__dateStr = d ? formatDateISO(d) : null;
         });
+
+        // Guardar en localStorage para persistencia
+        saveDataToStorage(rawData, file.name);
 
         setStatus(`Archivo cargado. Registros: ${rawData.length}. Hoja: "${sheetName}".`);
 
