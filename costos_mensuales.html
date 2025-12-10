@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Costos Mensuales - Vehículos</title>
+
+  <!-- Librería para leer Excel en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Plotly para gráficas interactivas -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      background: #f4f5f7;
+      color: #222;
+    }
+    header {
+      background: linear-gradient(135deg, #14532d, #16a34a);
+      color: #fff;
+      padding: 1.2rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+    header p {
+      margin: 0.2rem 0 0;
+      opacity: 0.9;
+    }
+    .container {
+      padding: 1.5rem 2rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 1rem;
+    }
+    #controls {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+    input[type="file"],
+    select,
+    input[type="date"],
+    button {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #d0d7de;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    select[multiple] {
+      height: 90px;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      border: none;
+      background: #14532d;
+      color: #fff;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.15s ease;
+    }
+    button:hover {
+      background: #166534;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transform: translateY(-1px);
+    }
+    button.secondary {
+      background: #e1e4e8;
+      color: #111;
+      margin-top: 0.4rem;
+    }
+    button.secondary:hover {
+      background: #d0d7de;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    .kpi {
+      background: #fff;
+      border-radius: 10px;
+      padding: 0.8rem 0.9rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .kpi label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #555;
+      margin-bottom: 0.15rem;
+    }
+    .kpi-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 0.15rem;
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .chart-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.5rem 0.6rem 0.8rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .chart-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin: 0.1rem 0 0.2rem 0.2rem;
+    }
+    .chart {
+      width: 100%;
+      height: 340px;
+    }
+    .full-width-chart {
+      margin-top: 1rem;
+    }
+    #status {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 0.4rem;
+    }
+    /* Tabla detalle */
+    .table-container {
+      margin-top: 1.2rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 0.8rem;
+      max-height: 400px;
+      overflow: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.8rem;
+    }
+    th, td {
+      border-bottom: 1px solid #e1e4e8;
+      padding: 0.35rem 0.45rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #f6f8fa;
+      z-index: 1;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    tr:nth-child(even) td {
+      background: #fafbfc;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.05rem 0.4rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #166534;
+    }
+    @media (max-width: 960px) {
+      #controls {
+        grid-template-columns: 1fr;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dashboard - Costos Mensuales Vehículos</h1>
+    <p>Carga el archivo <strong>Costos mensuales - Vehiculos.xlsx</strong> (hoja "Cto Vehiculos") y explora los costos.</p>
+  </header>
+
+  <div class="container">
+    <!-- Controles -->
+    <div class="card">
+      <div id="controls">
+        <div>
+          <label for="fileInput">Archivo Excel</label>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" />
+          <div id="status"></div>
+        </div>
+
+        <div>
+          <label for="catalogoFilter">Catálogo (multi)</label>
+          <select id="catalogoFilter" multiple></select>
+        </div>
+
+        <div>
+          <label for="ciudadFilter">Ciudad (multi)</label>
+          <select id="ciudadFilter" multiple></select>
+        </div>
+
+        <div>
+          <label>Rango de fechas</label>
+          <div style="display:flex; gap:0.3rem;">
+            <input type="date" id="startDate" />
+            <input type="date" id="endDate" />
+          </div>
+          <button id="applyFiltersBtn" style="margin-top:0.4rem;">Aplicar filtros</button>
+          <button id="resetFiltersBtn" class="secondary">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <label>Costo total (Neto)</label>
+          <div class="kpi-value" id="kpiCostoTotal">-</div>
+          <div class="kpi-sub" id="kpiCostoTotalSub"></div>
+        </div>
+        <div class="kpi">
+          <label>Promedio mensual</label>
+          <div class="kpi-value" id="kpiPromedioMensual">-</div>
+          <div class="kpi-sub">Basado en meses con movimiento</div>
+        </div>
+        <div class="kpi">
+          <label>Registros</label>
+          <div class="kpi-value" id="kpiRegistros">-</div>
+          <div class="kpi-sub" id="kpiRegistrosSub"></div>
+        </div>
+        <div class="kpi">
+          <label>Terceros únicos</label>
+          <div class="kpi-value" id="kpiTerceros">-</div>
+          <div class="kpi-sub" id="kpiTercerosSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficas -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Costos mensuales</div>
+        <div id="chart_costos_mensuales" class="chart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Costos por catálogo</div>
+        <div id="chart_costos_catalogo" class="chart"></div>
+      </div>
+    </div>
+
+    <div class="chart-card full-width-chart">
+      <div class="chart-title">Top 10 ciudades y terceros por costo</div>
+      <div style="display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap:0.8rem;">
+        <div id="chart_costos_ciudad" class="chart"></div>
+        <div id="chart_costos_terceros" class="chart"></div>
+      </div>
+    </div>
+
+    <!-- Tabla detalle -->
+    <div class="table-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+        <strong>Detalle de registros filtrados</strong>
+        <span id="tableInfo" style="font-size:0.8rem; color:#666;"></span>
+      </div>
+      <table id="detailTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let rawData = [];
+    let filteredData = [];
+
+    const DATE_COL = "Fecha";
+    const COSTO_COL = "Neto";
+    const CATALOGO_COL = "Catalogo";
+    const CIUDAD_COL = "Ciudad|Descripción";
+    const TERCERO_COL = "Tercero|Nombre";
+    const PROYECTO_COL = "Proyecto|Nombre";
+    const DESCRIPCION_COL = "Descripción";
+
+    const detailColumns = [
+      DATE_COL,
+      CATALOGO_COL,
+      COSTO_COL,
+      CIUDAD_COL,
+      PROYECTO_COL,
+      TERCERO_COL,
+      DESCRIPCION_COL
+    ];
+
+    const statusEl = document.getElementById("status");
+    const catalogoFilterEl = document.getElementById("catalogoFilter");
+    const ciudadFilterEl = document.getElementById("ciudadFilter");
+    const startDateEl = document.getElementById("startDate");
+    const endDateEl = document.getElementById("endDate");
+
+    const kpiCostoTotalEl = document.getElementById("kpiCostoTotal");
+    const kpiCostoTotalSubEl = document.getElementById("kpiCostoTotalSub");
+    const kpiPromedioMensualEl = document.getElementById("kpiPromedioMensual");
+    const kpiRegistrosEl = document.getElementById("kpiRegistros");
+    const kpiRegistrosSubEl = document.getElementById("kpiRegistrosSub");
+    const kpiTercerosEl = document.getElementById("kpiTerceros");
+    const kpiTercerosSubEl = document.getElementById("kpiTercerosSub");
+
+    const tableInfoEl = document.getElementById("tableInfo");
+    const detailTableHead = document.querySelector("#detailTable thead");
+    const detailTableBody = document.querySelector("#detailTable tbody");
+
+    document.getElementById("fileInput").addEventListener("change", handleFile);
+    document.getElementById("applyFiltersBtn").addEventListener("click", applyFilters);
+    document.getElementById("resetFiltersBtn").addEventListener("click", resetFilters);
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+
+    function excelDateToJSDate(serial) {
+      const utc_days = Math.floor(serial - 25569);
+      const utc_value = utc_days * 86400;
+      const date_info = new Date(utc_value * 1000);
+      return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate());
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      if (typeof value === "number") {
+        return excelDateToJSDate(value);
+      }
+      if (typeof value === "string") {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) return d;
+      }
+      return null;
+    }
+
+    function formatDateISO(d) {
+      if (!d) return "";
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatMonthKey(d) {
+      if (!d) return "";
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}`;
+    }
+
+    function formatMoney(value) {
+      if (value == null || isNaN(value)) return "-";
+      const absVal = Math.abs(value);
+      let suffix = "";
+      let display = absVal;
+
+      if (absVal >= 1_000_000_000) {
+        display = absVal / 1_000_000_000;
+        suffix = " B";
+      } else if (absVal >= 1_000_000) {
+        display = absVal / 1_000_000;
+        suffix = " M";
+      } else if (absVal >= 1_000) {
+        display = absVal / 1_000;
+        suffix = " K";
+      }
+
+      return (value < 0 ? "-" : "") + display.toFixed(1) + suffix;
+    }
+
+    function handleFile(evt) {
+      const file = evt.target.files[0];
+      if (!file) {
+        setStatus("No se seleccionó archivo.");
+        return;
+      }
+      setStatus("Leyendo archivo...");
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        // Buscar hoja "Cto Vehiculos" (o similar)
+        let sheetName = workbook.SheetNames.find(n =>
+          n.toLowerCase().includes("cto vehiculo")
+        );
+        if (!sheetName) {
+          sheetName = workbook.SheetNames[0];
+        }
+
+        const sheet = workbook.Sheets[sheetName];
+        rawData = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+        if (!rawData.length) {
+          setStatus("La hoja está vacía.");
+          return;
+        }
+
+        // Normalizar fecha
+        rawData.forEach(row => {
+          const d = parseDate(row[DATE_COL]);
+          row.__date = d;
+          row.__dateStr = d ? formatDateISO(d) : null;
+          row.__monthKey = d ? formatMonthKey(d) : null;
+        });
+
+        setStatus(`Archivo cargado. Registros: ${rawData.length}. Hoja: "${sheetName}".`);
+
+        initFilters();
+        applyFilters();
+      };
+      reader.onerror = function() {
+        setStatus("Error leyendo el archivo.");
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function getSelectedOptions(selectEl) {
+      return Array.from(selectEl.options)
+        .filter(opt => opt.selected)
+        .map(opt => opt.value);
+    }
+
+    function initFilters() {
+      // Catálogo
+      const catalogos = Array.from(
+        new Set(rawData.map(r => r[CATALOGO_COL]).filter(Boolean))
+      ).sort();
+      catalogoFilterEl.innerHTML = "";
+      catalogos.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        catalogoFilterEl.appendChild(opt);
+      });
+
+      // Ciudad
+      const ciudades = Array.from(
+        new Set(rawData.map(r => r[CIUDAD_COL]).filter(Boolean))
+      ).sort();
+      ciudadFilterEl.innerHTML = "";
+      ciudades.forEach(ci => {
+        const opt = document.createElement("option");
+        opt.value = ci;
+        opt.textContent = ci;
+        ciudadFilterEl.appendChild(opt);
+      });
+
+      // Rango de fechas global
+      const validDates = rawData
+        .map(r => r.__date)
+        .filter(d => d instanceof Date && !isNaN(d));
+      if (validDates.length) {
+        const minD = new Date(Math.min.apply(null, validDates));
+        const maxD = new Date(Math.max.apply(null, validDates));
+        startDateEl.value = formatDateISO(minD);
+        endDateEl.value = formatDateISO(maxD);
+      }
+    }
+
+    function applyFilters() {
+      if (!rawData.length) return;
+
+      const selectedCatalogos = getSelectedOptions(catalogoFilterEl);
+      const selectedCiudades = getSelectedOptions(ciudadFilterEl);
+      const startFilter = startDateEl.value ? new Date(startDateEl.value) : null;
+      const endFilter = endDateEl.value ? new Date(endDateEl.value) : null;
+
+      filteredData = rawData.filter(row => {
+        // Fecha
+        if (startFilter || endFilter) {
+          const d = row.__date;
+          if (!(d instanceof Date) || isNaN(d)) return false;
+          if (startFilter && d < startFilter) return false;
+          if (endFilter && d > endFilter) return false;
+        }
+        // Catálogo
+        if (selectedCatalogos.length > 0) {
+          const cat = row[CATALOGO_COL];
+          if (!selectedCatalogos.includes(String(cat))) return false;
+        }
+        // Ciudad
+        if (selectedCiudades.length > 0) {
+          const ci = row[CIUDAD_COL];
+          if (!selectedCiudades.includes(String(ci))) return false;
+        }
+        return true;
+      });
+
+      setStatus(`Registros filtrados: ${filteredData.length}`);
+      updateKPIs();
+      drawCharts();
+      renderTable();
+    }
+
+    function resetFilters() {
+      if (!rawData.length) return;
+
+      Array.from(catalogoFilterEl.options).forEach(o => (o.selected = false));
+      Array.from(ciudadFilterEl.options).forEach(o => (o.selected = false));
+
+      const validDates = rawData
+        .map(r => r.__date)
+        .filter(d => d instanceof Date && !isNaN(d));
+      if (validDates.length) {
+        const minD = new Date(Math.min.apply(null, validDates));
+        const maxD = new Date(Math.max.apply(null, validDates));
+        startDateEl.value = formatDateISO(minD);
+        endDateEl.value = formatDateISO(maxD);
+      } else {
+        startDateEl.value = "";
+        endDateEl.value = "";
+      }
+      applyFilters();
+    }
+
+    function sumNumeric(arr, col) {
+      return arr.reduce((acc, r) => {
+        const val = parseFloat(r[col]);
+        if (!isNaN(val)) return acc + val;
+        return acc;
+      }, 0);
+    }
+
+    function updateKPIs() {
+      if (!filteredData.length) {
+        kpiCostoTotalEl.textContent = "-";
+        kpiCostoTotalSubEl.textContent = "";
+        kpiPromedioMensualEl.textContent = "-";
+        kpiRegistrosEl.textContent = "-";
+        kpiRegistrosSubEl.textContent = "";
+        kpiTercerosEl.textContent = "-";
+        kpiTercerosSubEl.textContent = "";
+        return;
+      }
+
+      const totalCosto = sumNumeric(filteredData, COSTO_COL);
+      kpiCostoTotalEl.textContent = formatMoney(totalCosto);
+      kpiCostoTotalSubEl.textContent = `Suma Neto: ${totalCosto.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
+
+      // Meses con movimiento
+      const meses = new Set(
+        filteredData.map(r => r.__monthKey).filter(Boolean)
+      );
+      const mesesCount = meses.size || 1;
+      const promedioMensual = totalCosto / mesesCount;
+      kpiPromedioMensualEl.textContent = formatMoney(promedioMensual);
+
+      // Registros
+      kpiRegistrosEl.textContent = filteredData.length;
+      const catalogosUsados = new Set(
+        filteredData.map(r => r[CATALOGO_COL]).filter(Boolean)
+      );
+      kpiRegistrosSubEl.textContent = `Catálogos: ${Array.from(catalogosUsados).join(", ")}`;
+
+      // Terceros
+      const terceros = new Set(
+        filteredData.map(r => r[TERCERO_COL]).filter(Boolean)
+      );
+      kpiTercerosEl.textContent = terceros.size;
+      kpiTercerosSubEl.textContent = `Ej: ${Array.from(terceros).slice(0, 3).join(", ")}${terceros.size > 3 ? "..." : ""}`;
+    }
+
+    function drawCharts() {
+      if (!filteredData.length) {
+        Plotly.purge("chart_costos_mensuales");
+        Plotly.purge("chart_costos_catalogo");
+        Plotly.purge("chart_costos_ciudad");
+        Plotly.purge("chart_costos_terceros");
+        return;
+      }
+
+      drawCostosMensuales();
+      drawCostosPorCatalogo();
+      drawCostosPorCiudad();
+      drawCostosPorTercero();
+    }
+
+    function drawCostosMensuales() {
+      const map = {};
+      filteredData.forEach(r => {
+        const key = r.__monthKey;
+        if (!key) return;
+        if (!map[key]) map[key] = 0;
+        const val = parseFloat(r[COSTO_COL]);
+        if (!isNaN(val)) map[key] += val;
+      });
+
+      const meses = Object.keys(map).sort();
+      const valores = meses.map(m => map[m]);
+
+      const trace = {
+        x: meses,
+        y: valores,
+        type: "bar",
+        hovertemplate: "%{x}<br>Costo: %{y:,.0f}<extra></extra>"
+      };
+
+      const layout = {
+        margin: { t: 20, r: 10, b: 50, l: 60 },
+        yaxis: {
+          title: "Costo Neto"
+        },
+        xaxis: {
+          title: "Mes",
+          tickangle: -45
+        }
+      };
+
+      Plotly.newPlot("chart_costos_mensuales", [trace], layout, { responsive: true });
+    }
+
+    function drawCostosPorCatalogo() {
+      const map = {};
+      filteredData.forEach(r => {
+        const cat = r[CATALOGO_COL] || "Sin catálogo";
+        if (!map[cat]) map[cat] = 0;
+        const val = parseFloat(r[COSTO_COL]);
+        if (!isNaN(val)) map[cat] += val;
+      });
+
+      const cats = Object.keys(map).sort();
+      const valores = cats.map(c => map[c]);
+
+      const trace = {
+        x: cats,
+        y: valores,
+        type: "bar",
+        hovertemplate: "%{x}<br>Costo: %{y:,.0f}<extra></extra>"
+      };
+
+      const layout = {
+        margin: { t: 20, r: 10, b: 80, l: 60 },
+        yaxis: { title: "Costo Neto" },
+        xaxis: { tickangle: -40 }
+      };
+
+      Plotly.newPlot("chart_costos_catalogo", [trace], layout, { responsive: true });
+    }
+
+    function drawCostosPorCiudad() {
+      const map = {};
+      filteredData.forEach(r => {
+        const ci = r[CIUDAD_COL] || "Sin ciudad";
+        if (!map[ci]) map[ci] = 0;
+        const val = parseFloat(r[COSTO_COL]);
+        if (!isNaN(val)) map[ci] += val;
+      });
+
+      let entries = Object.entries(map);
+      entries.sort((a, b) => b[1] - a[1]);
+      entries = entries.slice(0, 10);
+
+      const ciudades = entries.map(e => e[0]);
+      const valores = entries.map(e => e[1]);
+
+      const trace = {
+        x: valores,
+        y: ciudades,
+        type: "bar",
+        orientation: "h",
+        hovertemplate: "Ciudad: %{y}<br>Costo: %{x:,.0f}<extra></extra>"
+      };
+
+      const layout = {
+        margin: { t: 20, r: 10, b: 40, l: 100 },
+        xaxis: { title: "Costo Neto (Top 10 ciudades)" }
+      };
+
+      Plotly.newPlot("chart_costos_ciudad", [trace], layout, { responsive: true });
+    }
+
+    function drawCostosPorTercero() {
+      const map = {};
+      filteredData.forEach(r => {
+        const t = r[TERCERO_COL] || "Sin tercero";
+        if (!map[t]) map[t] = 0;
+        const val = parseFloat(r[COSTO_COL]);
+        if (!isNaN(val)) map[t] += val;
+      });
+
+      let entries = Object.entries(map);
+      entries.sort((a, b) => b[1] - a[1]);
+      entries = entries.slice(0, 10);
+
+      const terceros = entries.map(e => e[0]);
+      const valores = entries.map(e => e[1]);
+
+      const trace = {
+        x: valores,
+        y: terceros,
+        type: "bar",
+        orientation: "h",
+        hovertemplate: "Tercero: %{y}<br>Costo: %{x:,.0f}<extra></extra>"
+      };
+
+      const layout = {
+        margin: { t: 20, r: 10, b: 40, l: 150 },
+        xaxis: { title: "Costo Neto (Top 10 terceros)" }
+      };
+
+      Plotly.newPlot("chart_costos_terceros", [trace], layout, { responsive: true });
+    }
+
+    function renderTable() {
+      detailTableHead.innerHTML = "";
+      detailTableBody.innerHTML = "";
+
+      const theadRow = document.createElement("tr");
+      detailColumns.forEach(col => {
+        const th = document.createElement("th");
+        th.textContent = col;
+        theadRow.appendChild(th);
+      });
+      detailTableHead.appendChild(theadRow);
+
+      const maxRows = 300;
+      const rowsToShow = filteredData.slice(0, maxRows);
+
+      rowsToShow.forEach(r => {
+        const tr = document.createElement("tr");
+        detailColumns.forEach(col => {
+          const td = document.createElement("td");
+          let val = r[col];
+
+          if (col === DATE_COL) {
+            val = r.__date ? formatDateISO(r.__date) : "";
+          }
+          if (col === COSTO_COL) {
+            const num = parseFloat(val);
+            td.textContent = isNaN(num)
+              ? ""
+              : num.toLocaleString("es-CO", { minimumFractionDigits: 0 });
+          } else if (col === CATALOGO_COL && val) {
+            const span = document.createElement("span");
+            span.className = "badge";
+            span.textContent = val;
+            td.appendChild(span);
+          } else {
+            td.textContent = val == null ? "" : String(val);
+          }
+          tr.appendChild(td);
+        });
+        detailTableBody.appendChild(tr);
+      });
+
+      const total = filteredData.length;
+      if (total > maxRows) {
+        tableInfoEl.textContent = `Mostrando ${rowsToShow.length} de ${total} registros (límite para vista rápida).`;
+      } else {
+        tableInfoEl.textContent = `Registros mostrados: ${total}.`;
+      }
+    }
+  </script>
+</body>
+</html>

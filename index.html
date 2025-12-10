@@ -46,9 +46,9 @@
     
     .cards-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 2rem;
-      max-width: 1200px;
+      max-width: 1400px;
       width: 100%;
     }
     
@@ -179,15 +179,18 @@
       font-size: 0.85rem;
     }
     
+    @media (max-width: 1200px) {
+      .cards-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
     @media (max-width: 768px) {
       .header h1 {
         font-size: 1.8rem;
       }
-      
       .cards-container {
         grid-template-columns: 1fr;
       }
-      
       .card {
         padding: 1.5rem;
       }
@@ -260,8 +263,24 @@
         <span>🔍</span> Abrir Reporte
       </a>
     </div>
+    
+    <!-- Card 4: Costos Mensuales -->
+    <div class="card">
+      <div class="card-icon" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">💰</div>
+      <h2>Costos Mensuales</h2>
+      <p>
+        Consulta y analiza los costos mensuales de operación, mantenimiento y otros gastos asociados a la flota.
+      </p>
+      <ul class="card-features">
+        <li>Resumen de costos por mes</li>
+        <li>Detalle por tipo de gasto</li>
+        <li>Exportación a Excel</li>
+      </ul>
+      <a href="costos_mensuales.html" class="btn" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">
+        <span>💸</span> Abrir Costos Mensuales
+      </a>
+    </div>
   </div>
-  
   <div class="footer">
     <p>© 2025 HESEGO Ingeniería S.A.S. - Todos los derechos reservados</p>
   </div>
