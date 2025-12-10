@@ -354,6 +354,188 @@
     const startDateEl = document.getElementById("startDate");
     const endDateEl = document.getElementById("endDate");
 
+    // Persistencia con IndexedDB
+    const DB_NAME = 'hesego_costos_db';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'costos_data';
+    let isLoadingFilters = false;
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+      });
+    }
+
+    async function saveDataToStorage(data, fileName) {
+      try {
+        const dataToSave = data.map(row => {
+          const newRow = { ...row };
+          delete newRow.__date;
+          return newRow;
+        });
+        
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        
+        store.put({
+          id: 'main_data',
+          data: dataToSave,
+          fileName: fileName,
+          savedAt: new Date().toISOString(),
+          recordCount: data.length
+        });
+        
+        transaction.oncomplete = () => {
+          console.log(`✅ Datos guardados: ${data.length} registros`);
+          db.close();
+        };
+        
+        transaction.onerror = () => {
+          console.warn('Error guardando datos:', transaction.error);
+          db.close();
+        };
+      } catch (e) {
+        console.warn('No se pudo guardar en IndexedDB:', e.message);
+      }
+    }
+
+    async function saveFiltersToStorage() {
+      if (isLoadingFilters) return;
+      try {
+        const filters = {
+          id: 'filters',
+          catalogos: getSelectedOptions(catalogoFilterEl),
+          ciudades: getSelectedOptions(ciudadFilterEl),
+          terceros: getSelectedOptions(terceroFilterEl),
+          startDate: startDateEl.value,
+          endDate: endDateEl.value
+        };
+        
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        store.put(filters);
+        
+        transaction.oncomplete = () => {
+          console.log('✅ Filtros guardados');
+          db.close();
+        };
+        
+        transaction.onerror = () => {
+          console.warn('Error guardando filtros:', transaction.error);
+          db.close();
+        };
+      } catch (e) {
+        console.warn('Error guardando filtros:', e.message);
+      }
+    }
+
+    async function loadFiltersFromStorage() {
+      try {
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get('filters');
+        
+        request.onsuccess = () => {
+          const filters = request.result;
+          db.close();
+          
+          if (filters) {
+            isLoadingFilters = true;
+            
+            if (filters.catalogos && filters.catalogos.length > 0) {
+              Array.from(catalogoFilterEl.options).forEach(opt => {
+                opt.selected = filters.catalogos.includes(opt.value);
+              });
+            }
+            
+            if (filters.ciudades && filters.ciudades.length > 0) {
+              Array.from(ciudadFilterEl.options).forEach(opt => {
+                opt.selected = filters.ciudades.includes(opt.value);
+              });
+            }
+            
+            if (filters.terceros && filters.terceros.length > 0) {
+              Array.from(terceroFilterEl.options).forEach(opt => {
+                opt.selected = filters.terceros.includes(opt.value);
+              });
+            }
+            
+            if (filters.startDate) startDateEl.value = filters.startDate;
+            if (filters.endDate) endDateEl.value = filters.endDate;
+            
+            console.log('✅ Filtros restaurados');
+            applyFilters();
+            isLoadingFilters = false;
+          } else {
+            applyFilters();
+          }
+        };
+        
+        request.onerror = () => {
+          console.warn('Error leyendo filtros:', request.error);
+          db.close();
+          applyFilters();
+        };
+      } catch (e) {
+        console.warn('Error cargando filtros:', e.message);
+        isLoadingFilters = false;
+        applyFilters();
+      }
+    }
+
+    async function loadDataFromStorage() {
+      try {
+        console.log('Buscando datos guardados...');
+        
+        const db = await openDatabase();
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get('main_data');
+        
+        request.onsuccess = () => {
+          const result = request.result;
+          db.close();
+          
+          if (result && result.data) {
+            rawData = result.data;
+            
+            rawData.forEach(row => {
+              const d = parseDate(row[DATE_COL]);
+              row.__date = d;
+              row.__dateStr = d ? formatDateISO(d) : null;
+              row.__monthKey = d ? formatMonthKey(d) : null;
+            });
+            
+            console.log(`✅ Datos restaurados: ${rawData.length} registros`);
+            setStatus(`Datos restaurados: ${rawData.length} registros. Archivo: "${result.fileName || 'desconocido'}"`);
+            
+            initFilters();
+            loadFiltersFromStorage();
+          } else {
+            console.log('No hay datos guardados previamente');
+          }
+        };
+        
+        request.onerror = () => {
+          console.warn('Error leyendo datos:', request.error);
+          db.close();
+        };
+      } catch (e) {
+        console.warn('No se pudo cargar desde IndexedDB:', e.message);
+      }
+    }
+
     const kpiCostoTotalEl = document.getElementById("kpiCostoTotal");
     const kpiCostoTotalSubEl = document.getElementById("kpiCostoTotalSub");
     const kpiPromedioMensualEl = document.getElementById("kpiPromedioMensual");
@@ -367,11 +549,17 @@
     const detailTableBody = document.querySelector("#detailTable tbody");
 
     document.getElementById("fileInput").addEventListener("change", handleFile);
-    document.getElementById("applyFiltersBtn").addEventListener("click", applyFilters);
+    document.getElementById("applyFiltersBtn").addEventListener("click", () => {
+      applyFilters();
+      saveFiltersToStorage();
+    });
     document.getElementById("resetFiltersBtn").addEventListener("click", resetFilters);
     catalogoFilterEl.addEventListener("change", updateChainedFilters);
     ciudadFilterEl.addEventListener("change", updateChainedFilters);
     terceroFilterEl.addEventListener("change", updateChainedFilters);
+
+    // Cargar datos guardados al inicio
+    setTimeout(loadDataFromStorage, 100);
 
     function filterSelect(selectId, searchText) {
       const selectEl = document.getElementById(selectId);
@@ -488,6 +676,9 @@
           row.__monthKey = d ? formatMonthKey(d) : null;
         });
 
+        // Guardar en IndexedDB para persistencia
+        saveDataToStorage(rawData, file.name);
+
         setStatus(`Archivo cargado. Registros: ${rawData.length}. Hoja: "${sheetName}".`);
 
         initFilters();
@@ -567,6 +758,9 @@
       populateFilter(catalogoFilterEl, newCatalogos, selectedCatalogos.filter(s => newCatalogos.has(s)));
       populateFilter(ciudadFilterEl, newCiudades, selectedCiudades.filter(s => newCiudades.has(s)));
       populateFilter(terceroFilterEl, newTerceros, selectedTerceros.filter(s => newTerceros.has(s)));
+      
+      // Guardar filtros
+      saveFiltersToStorage();
     }
 
     function applyFilters() {
