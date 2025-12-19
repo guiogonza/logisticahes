@@ -833,7 +833,24 @@
     document.getElementById("applyFiltersBtn").addEventListener("click", applyFilters);
     document.getElementById("resetFiltersBtn").addEventListener("click", resetFilters);
     
-    // Eventos para filtrado automático y actualizar botones
+    // Función para habilitar selección múltiple con clic simple (sin Ctrl)
+    function enableClickToggleSelection(selectEl) {
+      selectEl.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'OPTION') {
+          e.preventDefault();
+          const option = e.target;
+          option.selected = !option.selected;
+          selectEl.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+    
+    // Habilitar selección toggle en todos los filtros
+    enableClickToggleSelection(sedeFilterEl);
+    enableClickToggleSelection(estadoFilterEl);
+    enableClickToggleSelection(placaFilterEl);
+    
+    // Eventos para actualizar botones
     sedeFilterEl.addEventListener("change", function() {
       updateToggleButton('sedeFilter', 'sedeFilterBtn');
     });
