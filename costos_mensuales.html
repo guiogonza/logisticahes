@@ -824,9 +824,19 @@
     enableClickToggleSelection(ciudadFilterEl);
     enableClickToggleSelection(terceroFilterEl);
     
-    catalogoFilterEl.addEventListener("change", () => updateToggleButton('catalogoFilter', 'catalogoFilterBtn'));
-    ciudadFilterEl.addEventListener("change", () => updateToggleButton('ciudadFilter', 'ciudadFilterBtn'));
-    terceroFilterEl.addEventListener("change", () => updateToggleButton('terceroFilter', 'terceroFilterBtn'));
+    // Eventos para actualizar botones y aplicar filtros automáticamente
+    catalogoFilterEl.addEventListener("change", () => {
+      updateToggleButton('catalogoFilter', 'catalogoFilterBtn');
+      applyFilters();
+    });
+    ciudadFilterEl.addEventListener("change", () => {
+      updateToggleButton('ciudadFilter', 'ciudadFilterBtn');
+      applyFilters();
+    });
+    terceroFilterEl.addEventListener("change", () => {
+      updateToggleButton('terceroFilter', 'terceroFilterBtn');
+      applyFilters();
+    });
 
     // Cargar datos guardados al inicio
     setTimeout(loadDataFromStorage, 100);

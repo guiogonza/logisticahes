@@ -858,15 +858,18 @@
     enableClickToggleSelection(estadoFilterEl);
     enableClickToggleSelection(placaFilterEl);
     
-    // Eventos para actualizar botones
+    // Eventos para actualizar botones y aplicar filtros automáticamente
     sedeFilterEl.addEventListener("change", function() {
       updateToggleButton('sedeFilter', 'sedeFilterBtn');
+      applyFilters();
     });
     estadoFilterEl.addEventListener("change", function() {
       updateToggleButton('estadoFilter', 'estadoFilterBtn');
+      applyFilters();
     });
     placaFilterEl.addEventListener("change", function() {
       updateToggleButton('placaFilter', 'placaFilterBtn');
+      applyFilters();
     });
     
     // Cargar datos guardados al iniciar (después de que todo esté listo)
@@ -1870,6 +1873,13 @@
       const startFilter = startDateEl.value ? new Date(startDateEl.value) : null;
       const endFilter = endDateEl.value ? new Date(endDateEl.value) : null;
 
+      console.log('Aplicando filtros:', {
+        sedes: selectedSedes.length,
+        estados: selectedEstados.length,
+        placas: selectedPlacas.length,
+        rawDataLength: rawData.length
+      });
+
       filteredData = rawData.filter(row => {
         // fecha
         if (startFilter || endFilter) {
@@ -1898,6 +1908,7 @@
         return true;
       });
 
+      console.log('Registros filtrados:', filteredData.length);
       setStatus(`Registros filtrados: ${filteredData.length}`);
       updateKPIs();
       drawCharts();
