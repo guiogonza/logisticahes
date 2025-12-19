@@ -570,9 +570,15 @@
     });
     
     // Cargar datos guardados al iniciar (después de que todo esté listo)
-    window.addEventListener('DOMContentLoaded', function() {
+    // Verificar si el documento ya está listo o esperar el evento
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(loadDataFromStorage, 100);
+      });
+    } else {
+      // El DOM ya está listo, ejecutar directamente
       setTimeout(loadDataFromStorage, 100);
-    });
+    }
     
     // Nombres de meses
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];

@@ -16,9 +16,154 @@
       background: linear-gradient(135deg, #1c4e80 0%, #0a2540 100%);
       min-height: 100vh;
       display: flex;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0a2540 0%, #1c4e80 100%);
+      min-height: 100vh;
+      padding: 1.5rem 0;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .sidebar-logo {
+      text-align: center;
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1rem;
+    }
+    
+    .sidebar-logo img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-logo h2 {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .sidebar-menu {
+      list-style: none;
+      padding: 0.5rem 0;
+      flex: 1;
+    }
+    
+    .sidebar-menu li {
+      margin: 0.25rem 0;
+    }
+    
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1.5rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+    }
+    
+    .sidebar-menu a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border-left-color: #14b8a6;
+    }
+    
+    .sidebar-menu a.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border-left-color: #14b8a6;
+    }
+    
+    .sidebar-menu .menu-icon {
+      font-size: 1.3rem;
+      width: 28px;
+      text-align: center;
+    }
+    
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+    }
+    
+    .sidebar-footer p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.75rem;
+    }
+    
+    /* Secciones de contenido */
+    .section {
+      display: none;
+      width: 100%;
+    }
+    
+    .section.active {
+      display: block;
+    }
+    
+    .section-title {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Main content */
+    .main-content {
+      margin-left: 260px;
+      flex: 1;
+      padding: 2rem;
+      display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem;
+    }
+    
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 70px;
+        padding: 1rem 0;
+      }
+      .sidebar-logo h2,
+      .sidebar-menu span:not(.menu-icon),
+      .sidebar-footer {
+        display: none;
+      }
+      .sidebar-logo img {
+        width: 45px;
+      }
+      .sidebar-menu a {
+        justify-content: center;
+        padding: 1rem;
+      }
+      .sidebar-menu .menu-icon {
+        margin: 0;
+      }
+      .main-content {
+        margin-left: 70px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+      }
     }
     
     .header {
@@ -236,93 +381,143 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="img/logo.png" alt="HESEGO Logo" class="logo" />
-    <h1>Portal de Reportes</h1>
-    <p>Accede a los dashboards de inteligencia de negocios</p>
-  </div>
-  
-  <div class="cards-container">
-    <!-- Card 1: Reporte Power BI 1 -->
-    <div class="card">
-      <div class="card-icon blue">📊</div>
-      <h2>Dashboard Operativo Principal</h2>
-      <p>
-        Visualiza los indicadores clave de operación, métricas de rendimiento 
-        y análisis detallado del desempeño operativo de la flota.
-      </p>
-      <ul class="card-features">
-        <li>Indicadores de operación en tiempo real</li>
-        <li>Análisis por sede y vehículo</li>
-        <li>Tendencias y proyecciones</li>
-      </ul>
-      <a href="https://app.powerbi.com/groups/eaf13eec-7218-4feb-b698-2f169aa27417/reports/b01a51f9-739f-41b1-9b94-cb780725266d/0b0576686a6f016f1211?experience=power-bi" 
-         target="_blank" 
-         class="btn btn-primary">
-        <span>📈</span> Abrir Dashboard
-      </a>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <img src="img/logo.png" alt="HESEGO Logo" />
+      <h2>HESEGO</h2>
     </div>
-    
-    <!-- Card 2: Reporte Power BI 2 -->
-    <div class="card">
-      <div class="card-icon green">📋</div>
-      <h2>Dashboard de Gestión</h2>
-      <p>
-        Monitorea la gestión administrativa, control de mantenimientos, 
-        y seguimiento de estados de los vehículos de la flota.
-      </p>
-      <ul class="card-features">
-        <li>Control de mantenimientos</li>
-        <li>Gestión de siniestros</li>
-        <li>Reportes administrativos</li>
-      </ul>
-      <a href="https://app.powerbi.com/groups/eaf13eec-7218-4feb-b698-2f169aa27417/reports/e6c3c32a-c8b5-4f82-879e-5943ebb942e7/8b1891c1da81dabed2f1?experience=power-bi" 
-         target="_blank" 
-         class="btn btn-green">
-        <span>📑</span> Abrir Dashboard
-      </a>
-    </div>
-    
-    <!-- Card 3: Reporte Local (app.html) -->
-    <div class="card">
-      <div class="card-icon purple">🚗</div>
-      <h2>Operatividad de Vehículos</h2>
-      <div style="font-size:1rem; color:#7c3aed; font-weight:600; margin-bottom:0.5rem;">OPERATIVIDAD DIARIA.xlsx</div>
-      <p>
-        Analiza la operatividad diaria de vehículos desde archivos Excel. 
-        Filtros interactivos, gráficas y tabla de detalle.
-      </p>
-      <ul class="card-features">
-        <li>Carga de archivos Excel</li>
-        <li>Filtros por sede, estado y placa</li>
-        <li>Gráficas interactivas con click</li>
-        <li>Ordenamiento de tabla</li>
-      </ul>
-        <a href="operatividad_vehiculos.html" class="btn btn-purple">
-          <span>🔍</span> Abrir Reporte
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" data-section="almacenes" class="active">
+          <span class="menu-icon">🏢</span>
+          <span>ALMACENES</span>
         </a>
+      </li>
+      <li>
+        <a href="#" data-section="compras">
+          <span class="menu-icon">🛒</span>
+          <span>COMPRAS</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-section="transporte">
+          <span class="menu-icon">🚚</span>
+          <span>TRANSPORTE</span>
+        </a>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <p>© 2025 HESEGO</p>
     </div>
-    
-    <!-- Card 4: Costos Mensuales -->
-    <div class="card">
-      <div class="card-icon" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">💰</div>
-      <h2>Costos Mensuales</h2>
-      <div style="font-size:1rem; color:#f59e42; font-weight:600; margin-bottom:0.5rem;">Costos mensuales - Vehiculos.xlsx</div>
-      <p>
-        Consulta y analiza los costos mensuales de operación, mantenimiento y otros gastos asociados a la flota.
-      </p>
-      <ul class="card-features">
-        <li>Resumen de costos por mes</li>
-        <li>Detalle por tipo de gasto</li>
-        <li>Exportación a Excel</li>
-      </ul>
-      <a href="costos_mensuales.html" class="btn" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">
-        <span>💸</span> Abrir Costos Mensuales
-      </a>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <h1>Portal de Reportes</h1>
+      <p>Accede a los dashboards de inteligencia de negocios</p>
+    </div>
+  
+    <!-- Sección ALMACENES -->
+    <div class="section active" id="section-almacenes">
+      <h3 class="section-title">🏢 ALMACENES</h3>
+      <div class="cards-container" style="grid-template-columns: 1fr;">
+        <!-- Card: Dashboard Operativo Principal -->
+        <div class="card">
+          <div class="card-icon blue">📊</div>
+          <h2>Dashboard Operativo Principal</h2>
+          <p>
+            Visualiza los indicadores clave de operación, métricas de rendimiento 
+            y análisis detallado del desempeño operativo de la flota.
+          </p>
+          <ul class="card-features">
+            <li>Indicadores de operación en tiempo real</li>
+            <li>Análisis por sede y vehículo</li>
+            <li>Tendencias y proyecciones</li>
+          </ul>
+          <a href="https://app.powerbi.com/groups/eaf13eec-7218-4feb-b698-2f169aa27417/reports/b01a51f9-739f-41b1-9b94-cb780725266d/0b0576686a6f016f1211?experience=power-bi" 
+             target="_blank" 
+             class="btn btn-primary">
+            <span>📈</span> Abrir Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección COMPRAS -->
+    <div class="section" id="section-compras">
+      <h3 class="section-title">🛒 COMPRAS</h3>
+      <div class="cards-container" style="grid-template-columns: 1fr;">
+        <!-- Card: Operatividad de Vehículos -->
+        <div class="card">
+          <div class="card-icon purple">🚗</div>
+          <h2>Operatividad de Vehículos</h2>
+          <div style="font-size:1rem; color:#7c3aed; font-weight:600; margin-bottom:0.5rem;">OPERATIVIDAD DIARIA.xlsx</div>
+          <p>
+            Analiza la operatividad diaria de vehículos desde archivos Excel. 
+            Filtros interactivos, gráficas y tabla de detalle.
+          </p>
+          <ul class="card-features">
+            <li>Carga de archivos Excel</li>
+            <li>Filtros por sede, estado y placa</li>
+            <li>Gráficas interactivas con click</li>
+            <li>Ordenamiento de tabla</li>
+          </ul>
+          <a href="operatividad_vehiculos.html" class="btn btn-purple">
+            <span>🔍</span> Abrir Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección TRANSPORTE -->
+    <div class="section" id="section-transporte">
+      <h3 class="section-title">🚚 TRANSPORTE</h3>
+      <div class="cards-container" style="grid-template-columns: 1fr;">
+        <!-- Card: Costos Mensuales -->
+        <div class="card">
+          <div class="card-icon" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">💰</div>
+          <h2>Costos Mensuales</h2>
+          <div style="font-size:1rem; color:#f59e42; font-weight:600; margin-bottom:0.5rem;">Costos mensuales - Vehiculos.xlsx</div>
+          <p>
+            Consulta y analiza los costos mensuales de operación, mantenimiento y otros gastos asociados a la flota.
+          </p>
+          <ul class="card-features">
+            <li>Resumen de costos por mes</li>
+            <li>Detalle por tipo de gasto</li>
+            <li>Exportación a Excel</li>
+          </ul>
+          <a href="costos_mensuales.html" class="btn" style="background: linear-gradient(135deg, #f59e42, #fbbf24); color: #fff;">
+            <span>💸</span> Abrir Costos Mensuales
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2025 HESEGO Ingeniería S.A.S. - Todos los derechos reservados</p>
     </div>
   </div>
-  <div class="footer">
-    <p>© 2025 HESEGO Ingeniería S.A.S. - Todos los derechos reservados</p>
-  </div>
+
+  <script>
+    // Navegación del sidebar
+    document.querySelectorAll('.sidebar-menu a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remover clase active de todos los links
+        document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+        // Agregar clase active al link clickeado
+        this.classList.add('active');
+        
+        // Ocultar todas las secciones
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        // Mostrar la sección correspondiente
+        const sectionId = 'section-' + this.dataset.section;
+        document.getElementById(sectionId).classList.add('active');
+      });
+    });
+  </script>
 </body>
 </html>
