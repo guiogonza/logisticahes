@@ -798,9 +798,9 @@
       saveFiltersToStorage();
     });
     document.getElementById("resetFiltersBtn").addEventListener("click", resetFilters);
-    catalogoFilterEl.addEventListener("change", updateChainedFilters);
-    ciudadFilterEl.addEventListener("change", updateChainedFilters);
-    terceroFilterEl.addEventListener("change", updateChainedFilters);
+    catalogoFilterEl.addEventListener("change", () => updateToggleButton('catalogoFilter', 'catalogoFilterBtn'));
+    ciudadFilterEl.addEventListener("change", () => updateToggleButton('ciudadFilter', 'ciudadFilterBtn'));
+    terceroFilterEl.addEventListener("change", () => updateToggleButton('terceroFilter', 'terceroFilterBtn'));
 
     // Cargar datos guardados al inicio
     setTimeout(loadDataFromStorage, 100);
@@ -822,7 +822,14 @@
       const allSelected = visibleOptions.every(o => o.selected);
       visibleOptions.forEach(o => o.selected = !allSelected);
       btn.textContent = allSelected ? "Seleccionar todo" : "Deseleccionar todo";
-      updateChainedFilters();
+    }
+
+    function updateToggleButton(selectId, btnId) {
+      const selectEl = document.getElementById(selectId);
+      const buttonEl = document.getElementById(btnId);
+      const visibleOptions = Array.from(selectEl.options).filter(o => o.style.display !== "none");
+      const allSelected = visibleOptions.length > 0 && visibleOptions.every(o => o.selected);
+      buttonEl.textContent = allSelected ? 'Deseleccionar todo' : 'Seleccionar todo';
     }
 
     function setStatus(msg) {

@@ -835,15 +835,12 @@
     
     // Eventos para filtrado automático y actualizar botones
     sedeFilterEl.addEventListener("change", function() {
-      onSedeChange();
       updateToggleButton('sedeFilter', 'sedeFilterBtn');
     });
     estadoFilterEl.addEventListener("change", function() {
-      onEstadoChange();
       updateToggleButton('estadoFilter', 'estadoFilterBtn');
     });
     placaFilterEl.addEventListener("change", function() {
-      onPlacaChange();
       updateToggleButton('placaFilter', 'placaFilterBtn');
     });
     
