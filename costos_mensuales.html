@@ -824,13 +824,16 @@
     enableClickToggleSelection(ciudadFilterEl);
     enableClickToggleSelection(terceroFilterEl);
     
-    // Eventos para actualizar botones y aplicar filtros automáticamente
+    // Eventos para actualizar filtros encadenados y aplicar automáticamente
     catalogoFilterEl.addEventListener("change", () => {
       updateToggleButton('catalogoFilter', 'catalogoFilterBtn');
+      updateCiudadesByCatalogo();
+      updateTercerosByCatalogoYCiudad();
       applyFilters();
     });
     ciudadFilterEl.addEventListener("change", () => {
       updateToggleButton('ciudadFilter', 'ciudadFilterBtn');
+      updateTercerosByCatalogoYCiudad();
       applyFilters();
     });
     terceroFilterEl.addEventListener("change", () => {
@@ -1054,6 +1057,59 @@
       
       // Guardar filtros
       saveFiltersToStorage();
+    }
+    
+    // Filtrar ciudades según catálogos seleccionados
+    function updateCiudadesByCatalogo() {
+      const selectedCatalogos = getSelectedOptions(catalogoFilterEl);
+      
+      // Si no hay catálogos seleccionados, mostrar todas las ciudades
+      let dataFiltrada = rawData;
+      if (selectedCatalogos.length > 0) {
+        dataFiltrada = rawData.filter(row => selectedCatalogos.includes(String(row[CATALOGO_COL])));
+      }
+      
+      const ciudadesDisponibles = new Set(dataFiltrada.map(r => r[CIUDAD_COL]).filter(Boolean));
+      const selectedCiudades = getSelectedOptions(ciudadFilterEl);
+      
+      // Mantener solo las ciudades que siguen siendo válidas
+      const ciudadesValidas = selectedCiudades.filter(c => ciudadesDisponibles.has(c));
+      
+      // Repoblar con todas seleccionadas si no hay selección previa válida
+      if (ciudadesValidas.length === 0) {
+        populateFilter(ciudadFilterEl, ciudadesDisponibles, [], true);
+      } else {
+        populateFilter(ciudadFilterEl, ciudadesDisponibles, ciudadesValidas);
+      }
+      updateToggleButton('ciudadFilter', 'ciudadFilterBtn');
+    }
+    
+    // Filtrar terceros según catálogos y ciudades seleccionados
+    function updateTercerosByCatalogoYCiudad() {
+      const selectedCatalogos = getSelectedOptions(catalogoFilterEl);
+      const selectedCiudades = getSelectedOptions(ciudadFilterEl);
+      
+      let dataFiltrada = rawData;
+      if (selectedCatalogos.length > 0) {
+        dataFiltrada = dataFiltrada.filter(row => selectedCatalogos.includes(String(row[CATALOGO_COL])));
+      }
+      if (selectedCiudades.length > 0) {
+        dataFiltrada = dataFiltrada.filter(row => selectedCiudades.includes(String(row[CIUDAD_COL])));
+      }
+      
+      const tercerosDisponibles = new Set(dataFiltrada.map(r => r[TERCERO_COL]).filter(Boolean));
+      const selectedTerceros = getSelectedOptions(terceroFilterEl);
+      
+      // Mantener solo los terceros que siguen siendo válidos
+      const tercerosValidos = selectedTerceros.filter(t => tercerosDisponibles.has(t));
+      
+      // Repoblar con todos seleccionados si no hay selección previa válida
+      if (tercerosValidos.length === 0) {
+        populateFilter(terceroFilterEl, tercerosDisponibles, [], true);
+      } else {
+        populateFilter(terceroFilterEl, tercerosDisponibles, tercerosValidos);
+      }
+      updateToggleButton('terceroFilter', 'terceroFilterBtn');
     }
 
     function applyFilters() {

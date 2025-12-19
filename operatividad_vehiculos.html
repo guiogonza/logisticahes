@@ -858,13 +858,16 @@
     enableClickToggleSelection(estadoFilterEl);
     enableClickToggleSelection(placaFilterEl);
     
-    // Eventos para actualizar botones y aplicar filtros automáticamente
+    // Eventos para actualizar filtros encadenados y aplicar automáticamente
     sedeFilterEl.addEventListener("change", function() {
       updateToggleButton('sedeFilter', 'sedeFilterBtn');
+      updateEstadosBySede();
+      updatePlacasBySedeYEstado();
       applyFilters();
     });
     estadoFilterEl.addEventListener("change", function() {
       updateToggleButton('estadoFilter', 'estadoFilterBtn');
+      updatePlacasBySedeYEstado();
       applyFilters();
     });
     placaFilterEl.addEventListener("change", function() {
@@ -1564,6 +1567,98 @@
           opt.style.display = 'none';
         }
       });
+    }
+    
+    // Filtrar estados según sedes seleccionadas
+    function updateEstadosBySede() {
+      const selectedSedes = getSelectedOptions(sedeFilterEl);
+      const startFilter = startDateEl.value ? new Date(startDateEl.value) : null;
+      const endFilter = endDateEl.value ? new Date(endDateEl.value) : null;
+      
+      let dataFiltrada = rawData;
+      
+      // Filtrar por fecha
+      if (startFilter || endFilter) {
+        dataFiltrada = dataFiltrada.filter(row => {
+          const d = row.__date;
+          if (!(d instanceof Date) || isNaN(d)) return false;
+          if (startFilter && d < startFilter) return false;
+          if (endFilter && d > endFilter) return false;
+          return true;
+        });
+      }
+      
+      // Filtrar por sede si hay selección
+      if (selectedSedes.length > 0) {
+        dataFiltrada = dataFiltrada.filter(row => selectedSedes.includes(String(row[SEDE_COL])));
+      }
+      
+      const estadosDisponibles = Array.from(
+        new Set(dataFiltrada.map(r => r[ESTADO_COL]).filter(Boolean))
+      ).sort();
+      
+      const previousSelection = getSelectedOptions(estadoFilterEl);
+      const estadosValidos = previousSelection.filter(e => estadosDisponibles.includes(e));
+      
+      estadoFilterEl.innerHTML = "";
+      estadosDisponibles.forEach(est => {
+        const opt = document.createElement("option");
+        opt.value = est;
+        opt.textContent = est;
+        // Si no hay selección válida previa, seleccionar todos
+        opt.selected = estadosValidos.length === 0 || estadosValidos.includes(est);
+        estadoFilterEl.appendChild(opt);
+      });
+      updateToggleButton('estadoFilter', 'estadoFilterBtn');
+    }
+    
+    // Filtrar placas según sedes y estados seleccionados
+    function updatePlacasBySedeYEstado() {
+      const selectedSedes = getSelectedOptions(sedeFilterEl);
+      const selectedEstados = getSelectedOptions(estadoFilterEl);
+      const startFilter = startDateEl.value ? new Date(startDateEl.value) : null;
+      const endFilter = endDateEl.value ? new Date(endDateEl.value) : null;
+      
+      let dataFiltrada = rawData;
+      
+      // Filtrar por fecha
+      if (startFilter || endFilter) {
+        dataFiltrada = dataFiltrada.filter(row => {
+          const d = row.__date;
+          if (!(d instanceof Date) || isNaN(d)) return false;
+          if (startFilter && d < startFilter) return false;
+          if (endFilter && d > endFilter) return false;
+          return true;
+        });
+      }
+      
+      // Filtrar por sede
+      if (selectedSedes.length > 0) {
+        dataFiltrada = dataFiltrada.filter(row => selectedSedes.includes(String(row[SEDE_COL])));
+      }
+      
+      // Filtrar por estado
+      if (selectedEstados.length > 0) {
+        dataFiltrada = dataFiltrada.filter(row => selectedEstados.includes(String(row[ESTADO_COL])));
+      }
+      
+      const placasDisponibles = Array.from(
+        new Set(dataFiltrada.map(r => r[PLACA_COL]).filter(Boolean))
+      ).sort();
+      
+      const previousSelection = getSelectedOptions(placaFilterEl);
+      const placasValidas = previousSelection.filter(p => placasDisponibles.includes(p));
+      
+      placaFilterEl.innerHTML = "";
+      placasDisponibles.forEach(placa => {
+        const opt = document.createElement("option");
+        opt.value = placa;
+        opt.textContent = placa;
+        // Si no hay selección válida previa, seleccionar todos
+        opt.selected = placasValidas.length === 0 || placasValidas.includes(placa);
+        placaFilterEl.appendChild(opt);
+      });
+      updateToggleButton('placaFilter', 'placaFilterBtn');
     }
 
     function onDateChange() {
