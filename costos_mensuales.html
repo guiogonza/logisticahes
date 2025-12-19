@@ -929,6 +929,30 @@
 
       return (value < 0 ? "-" : "") + display.toFixed(1) + suffix;
     }
+    
+    // Función para corregir caracteres mal codificados
+    function fixEncoding(str) {
+      // Mapa de caracteres UTF-8 mal interpretados como Latin-1
+      const replacements = {
+        'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
+        'Ã±': 'ñ', 'Ã': 'Á', 'Ã‰': 'É', 'Ã': 'Í', 'Ã"': 'Ó',
+        'Ãš': 'Ú', 'Ã'': 'Ñ', 'Ã¼': 'ü', 'Ãœ': 'Ü',
+        'Âª': 'ª', 'Âº': 'º', 'Â°': '°',
+        'â€"': '–', 'â€"': '—', 'â€œ': '"', 'â€': '"',
+        'â€˜': ''', 'â€™': ''', 'â€¦': '…',
+        // Casos específicos que vemos
+        'AndalucÃa': 'Andalucía',
+        'BogotÃ¡': 'Bogotá',
+        'MedellÃ­n': 'Medellín',
+        'BarranquillÃ¡': 'Barranquilla'
+      };
+      
+      let result = str;
+      for (const [bad, good] of Object.entries(replacements)) {
+        result = result.split(bad).join(good);
+      }
+      return result;
+    }
 
     function handleFile(evt) {
       const file = evt.target.files[0];
@@ -957,6 +981,19 @@
           setStatus("La hoja está vacía.");
           return;
         }
+        
+        // Corregir caracteres mal codificados (UTF-8 interpretado como Latin-1)
+        rawData = rawData.map(row => {
+          const newRow = {};
+          for (const key in row) {
+            let value = row[key];
+            if (typeof value === 'string') {
+              value = fixEncoding(value);
+            }
+            newRow[key] = value;
+          }
+          return newRow;
+        });
 
         // Normalizar fecha
         rawData.forEach(row => {
