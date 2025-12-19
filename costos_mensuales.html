@@ -894,7 +894,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
+        const workbook = XLSX.read(data, { type: "array", codepage: 65001 });
 
         // Buscar hoja "Cto Vehiculos" (o similar)
         let sheetName = workbook.SheetNames.find(n =>
