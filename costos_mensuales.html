@@ -979,10 +979,10 @@
       availableOptions.ciudades = new Set(rawData.map(r => r[CIUDAD_COL]).filter(Boolean));
       availableOptions.terceros = new Set(rawData.map(r => r[TERCERO_COL]).filter(Boolean));
 
-      // Poblar todos los filtros
-      populateFilter(catalogoFilterEl, availableOptions.catalogos);
-      populateFilter(ciudadFilterEl, availableOptions.ciudades);
-      populateFilter(terceroFilterEl, availableOptions.terceros);
+      // Poblar todos los filtros - seleccionar todos por defecto
+      populateFilter(catalogoFilterEl, availableOptions.catalogos, [], true);
+      populateFilter(ciudadFilterEl, availableOptions.ciudades, [], true);
+      populateFilter(terceroFilterEl, availableOptions.terceros, [], true);
 
       // Rango de fechas global
       const validDates = rawData
@@ -994,9 +994,14 @@
         startDateEl.value = formatDateISO(minD);
         endDateEl.value = formatDateISO(maxD);
       }
+      
+      // Actualizar botones de toggle
+      updateToggleButton('catalogoFilter', 'catalogoFilterBtn');
+      updateToggleButton('ciudadFilter', 'ciudadFilterBtn');
+      updateToggleButton('terceroFilter', 'terceroFilterBtn');
     }
 
-    function populateFilter(selectEl, optionsSet, selectedValues = []) {
+    function populateFilter(selectEl, optionsSet, selectedValues = [], selectAllByDefault = false) {
       const currentSearch = selectEl.previousElementSibling?.value || "";
       selectEl.innerHTML = "";
       const sortedOptions = Array.from(optionsSet).sort();
@@ -1004,7 +1009,8 @@
         const opt = document.createElement("option");
         opt.value = val;
         opt.textContent = val;
-        opt.selected = selectedValues.includes(val);
+        // Seleccionar si está en selectedValues o si selectAllByDefault es true
+        opt.selected = selectAllByDefault || selectedValues.includes(val);
         selectEl.appendChild(opt);
       });
       if (currentSearch) {

@@ -1470,7 +1470,7 @@
     }
 
     function initFilters() {
-      // llenar Sede
+      // llenar Sede - seleccionar todos por defecto
       const sedes = Array.from(
         new Set(rawData.map(r => r[SEDE_COL]).filter(Boolean))
       ).sort();
@@ -1479,10 +1479,11 @@
         const opt = document.createElement("option");
         opt.value = sede;
         opt.textContent = sede;
+        opt.selected = true; // Seleccionar por defecto
         sedeFilterEl.appendChild(opt);
       });
 
-      // llenar Estado
+      // llenar Estado - seleccionar todos por defecto
       const estados = Array.from(
         new Set(rawData.map(r => r[ESTADO_COL]).filter(Boolean))
       ).sort();
@@ -1491,11 +1492,12 @@
         const opt = document.createElement("option");
         opt.value = est;
         opt.textContent = est;
+        opt.selected = true; // Seleccionar por defecto
         estadoFilterEl.appendChild(opt);
       });
 
-      // llenar Placas
-      updatePlacaFilter();
+      // llenar Placas (se seleccionan todos en updatePlacaFilter)
+      updatePlacaFilter(true);
 
       // rango de fechas global
       const validDates = rawData
@@ -1506,6 +1508,11 @@
         const maxD = new Date(Math.max.apply(null, validDates));
         initDateSelectors(minD, maxD);
       }
+      
+      // Actualizar botones de toggle
+      updateToggleButton('sedeFilter', 'sedeFilterBtn');
+      updateToggleButton('estadoFilter', 'estadoFilterBtn');
+      updateToggleButton('placaFilter', 'placaFilterBtn');
     }
 
     function toggleSelectAll(selectId, buttonId) {
@@ -1822,7 +1829,7 @@
       });
     }
 
-    function updatePlacaFilter() {
+    function updatePlacaFilter(selectAll = false) {
       // Obtener rango de fechas actual
       const startFilter = startDateEl.value ? new Date(startDateEl.value) : null;
       const endFilter = endDateEl.value ? new Date(endDateEl.value) : null;
@@ -1848,7 +1855,8 @@
         const opt = document.createElement("option");
         opt.value = placa;
         opt.textContent = placa;
-        opt.selected = previousSelection.includes(placa);
+        // Seleccionar si selectAll o si estaba seleccionado antes
+        opt.selected = selectAll || previousSelection.includes(placa);
         placaFilterEl.appendChild(opt);
       });
     }
