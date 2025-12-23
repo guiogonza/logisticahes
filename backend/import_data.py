@@ -217,6 +217,11 @@ def main():
     except Exception as e:
         print(f"⚠️ Error en Fiscal RU: {e}")
     
+    try:
+        total += import_brigadas()
+    except Exception as e:
+        print(f"⚠️ Error en Brigadas: {e}")
+    
     print("=" * 60)
     print(f"✅ IMPORTACIÓN COMPLETADA - Total: {total:,} registros")
     print(f"📁 Base de datos: {DB_PATH}")
@@ -690,6 +695,101 @@ def import_fiscal_ru():
         
     except Exception as e:
         print(f"❌ Error importando Fiscal RU: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def import_brigadas():
+    """Importar datos de Brigadas"""
+    config = EXCEL_FILES["brigadas"]
+    print(f"📂 Leyendo {config['path']} - Hoja: {config['sheet']}...")
+    
+    try:
+        df = pd.read_excel(config["path"], sheet_name=config["sheet"])
+        print(f"   Registros encontrados: {len(df)}")
+        
+        # Limpiar tabla
+        clear_table("brigadas")
+        
+        # Mapear columnas (con espacios al final)
+        column_mapping = {
+            "MES ": "mes",
+            "SEDE ": "sede",
+            "ITEM CODIGO": "item_codigo",
+            "DESCRIPCION ": "descripcion",
+            "TERCERO IDENTIFICACION": "tercero_identificacion",
+            "TERCERO NOMBRE": "tercero_nombre",
+            "NETO": "neto",
+            "CONTEO": "conteo",
+            "RECONTEO": "reconteo",
+            "DIFERENCIA": "diferencia",
+            "ESTADO": "estado",
+            "COSTO UNIT": "costo_unit",
+            "COSTO TOTAL": "costo_total",
+            "COSTO DIFERENCIA ": "costo_diferencia"
+        }
+        
+        # Preparar registros
+        records = []
+        for _, row in df.iterrows():
+            record = {}
+            for excel_col, db_col in column_mapping.items():
+                value = row.get(excel_col)
+                
+                # Convertir NaN a None
+                if pd.isna(value):
+                    value = None
+                elif isinstance(value, str):
+                    value = fix_encoding(value.strip())
+                
+                record[db_col] = value
+            
+            # Calcular DESVIACION = (costo_diferencia / costo_total) * 100
+            costo_total = record.get("costo_total", 0) or 0
+            costo_diferencia = record.get("costo_diferencia", 0) or 0
+            
+            if costo_total != 0:
+                record["desviacion"] = (costo_diferencia / costo_total) * 100
+            else:
+                record["desviacion"] = 0
+            
+            records.append(record)
+        
+        # Insertar en BD
+        with get_db() as conn:
+            cursor = conn.cursor()
+            for record in records:
+                cursor.execute('''
+                    INSERT INTO brigadas 
+                    (mes, sede, item_codigo, descripcion, tercero_identificacion,
+                     tercero_nombre, neto, conteo, reconteo, diferencia,
+                     estado, costo_unit, costo_total, costo_diferencia, desviacion)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    record["mes"],
+                    record["sede"],
+                    record["item_codigo"],
+                    record["descripcion"],
+                    record["tercero_identificacion"],
+                    record["tercero_nombre"],
+                    record["neto"],
+                    record["conteo"],
+                    record["reconteo"],
+                    record["diferencia"],
+                    record["estado"],
+                    record["costo_unit"],
+                    record["costo_total"],
+                    record["costo_diferencia"],
+                    record["desviacion"]
+                ))
+            conn.commit()
+        
+        print(f"✅ Brigadas: {len(records)} registros importados")
+        return len(records)
+        
+    except Exception as e:
+        print(f"❌ Error importando Brigadas: {e}")
         import traceback
         traceback.print_exc()
         raise

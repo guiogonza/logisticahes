@@ -135,6 +135,13 @@
         </div>
         <div id="chartFiscalRU" class="chart"></div>
       </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">🚒 Inventario Brigadas por Sede</h3>
+        </div>
+        <div id="chartBrigadas" class="chart"></div>
+      </div>
     </div>
   </div>
   <script>
@@ -191,8 +198,8 @@
       } else {
         delete filtrosGlobales.sedes;
       }
-      // Actualizar ambas gráficas
-      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU()]);
+      // Actualizar todas las gráficas
+      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas()]);
     }
     
     // Aplicar filtros específicos de la gráfica OYMM (sin recargar todo)
@@ -213,7 +220,7 @@
     }
     
     async function cargarDatos() {
-      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
+      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
     }
     
     function combinarFiltros() {
@@ -253,6 +260,19 @@
       ];
       const layout = { barmode: 'group', xaxis: { title: 'Sede' }, yaxis: { title: 'Costo ($)', tickformat: '$,.0f', separatethousands: true }, yaxis2: { title: 'Desviación (%)', overlaying: 'y', side: 'right', tickformat: '.2f', showgrid: false }, legend: { x: 0.5, y: -0.2, xanchor: 'center', orientation: 'h' }, margin: { t: 30, b: 80, l: 150, r: 80 } };
       Plotly.newPlot('chartFiscalRU', traces, layout, { responsive: true });
+    }
+    
+    async function actualizarGraficaBrigadas() {
+      const filtros = filtrosGlobales; // Solo usa filtros globales (Tiempo + Sede)
+      const r = await fetch(`/api/brigadas/grafico/por-sede?${new URLSearchParams(filtros)}`), data = await r.json();
+      const sedes = data.sedes, costosTotal = data.costo_total, costosDif = data.costo_diferencia, desv = data.desviacion;
+      const traces = [
+        { x: sedes, y: costosTotal, name: 'Costo Total', type: 'bar', marker: { color: '#3b82f6' } },
+        { x: sedes, y: costosDif, name: 'Costo Diferencia', type: 'bar', marker: { color: '#ef4444' } },
+        { x: sedes, y: desv, name: 'Desviación %', type: 'scatter', mode: 'lines+markers', yaxis: 'y2', line: { color: '#f59e0b', width: 3 }, marker: { size: 8, color: '#f59e0b' } }
+      ];
+      const layout = { barmode: 'group', xaxis: { title: 'Sede' }, yaxis: { title: 'Costo ($)', tickformat: '$,.0f', separatethousands: true }, yaxis2: { title: 'Desviación (%)', overlaying: 'y', side: 'right', tickformat: '.2f', showgrid: false }, legend: { x: 0.5, y: -0.2, xanchor: 'center', orientation: 'h' }, margin: { t: 30, b: 80, l: 150, r: 80 } };
+      Plotly.newPlot('chartBrigadas', traces, layout, { responsive: true });
     }
     
     function getSelectedOptions(selectEl) { return Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value); }

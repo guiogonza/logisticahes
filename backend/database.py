@@ -276,6 +276,32 @@ def init_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_fiscal_ru_tipo ON fiscal_ru(tipo_inventario)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_fiscal_ru_sede ON fiscal_ru(sede)')
         
+        # Tabla para Brigadas
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS brigadas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mes TEXT,
+                sede TEXT,
+                item_codigo INTEGER,
+                descripcion TEXT,
+                tercero_identificacion TEXT,
+                tercero_nombre TEXT,
+                neto REAL,
+                conteo REAL,
+                reconteo REAL,
+                diferencia REAL,
+                estado TEXT,
+                costo_unit REAL,
+                costo_total REAL,
+                costo_diferencia REAL,
+                desviacion REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_brigadas_mes ON brigadas(mes)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_brigadas_sede ON brigadas(sede)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_brigadas_estado ON brigadas(estado)')
+        
         conn.commit()
         print("✅ Base de datos inicializada correctamente")
 
