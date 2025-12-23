@@ -157,11 +157,26 @@
         </div>
         <div id="chartErrores" class="chart"></div>
       </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">📋 Inventarios Programados vs Ejecutados</h3>
+          <div class="chart-filters">
+            <div class="chart-filter-group">
+              <label>Tipo Inventario:</label>
+              <input type="text" class="filter-search" id="tipoProgSearch" placeholder="Buscar..." onkeyup="filterSelect('tipoProgFilter', this.value)" />
+              <select multiple id="tipoProgFilter"></select>
+              <button class="btn-filter-chart" id="tipoProgFilterBtn" onclick="toggleSelectAll('tipoProgFilter', 'tipoProgFilterBtn')">Seleccionar todo</button>
+            </div>
+          </div>
+        </div>
+        <div id="chartProgramados" class="chart"></div>
+      </div>
     </div>
   </div>
   <script>
-    let filtrosDisponibles = {}, filtrosDisponiblesFiscal = {}, filtrosDisponiblesErrores = {}, filtrosGlobales = {}, filtrosGrafica = {}, filtrosGraficaFiscal = {}, filtrosGraficaErrores = {};
-    const fechaInicioEl = document.getElementById("fechaInicio"), fechaFinEl = document.getElementById("fechaFin"), sedeGlobalFilterEl = document.getElementById("sedeGlobalFilter"), responsableFilterEl = document.getElementById("responsableFilter"), estadoFilterEl = document.getElementById("estadoFilter"), tipoFilterEl = document.getElementById("tipoFilter"), errorFilterEl = document.getElementById("errorFilter"), statusEl = document.getElementById("status");
+    let filtrosDisponibles = {}, filtrosDisponiblesFiscal = {}, filtrosDisponiblesErrores = {}, filtrosDisponiblesProgramados = {}, filtrosGlobales = {}, filtrosGrafica = {}, filtrosGraficaFiscal = {}, filtrosGraficaErrores = {}, filtrosGraficaProgramados = {};
+    const fechaInicioEl = document.getElementById("fechaInicio"), fechaFinEl = document.getElementById("fechaFin"), sedeGlobalFilterEl = document.getElementById("sedeGlobalFilter"), responsableFilterEl = document.getElementById("responsableFilter"), estadoFilterEl = document.getElementById("estadoFilter"), tipoFilterEl = document.getElementById("tipoFilter"), errorFilterEl = document.getElementById("errorFilter"), tipoProgFilterEl = document.getElementById("tipoProgFilter"), statusEl = document.getElementById("status");
     
     window.addEventListener('DOMContentLoaded', async () => { await cargarFiltros(); await cargarDatos(); });
     
@@ -182,6 +197,11 @@
       const r3 = await fetch('/api/errores/filtros'); filtrosDisponiblesErrores = await r3.json();
       populateFilter(errorFilterEl, filtrosDisponiblesErrores.tipos_error, filtrosDisponiblesErrores.tipos_error);
       updateToggleButton('errorFilter', 'errorFilterBtn');
+      
+      // Filtros para Programados vs Ejecutados
+      const r4 = await fetch('/api/programados/filtros'); filtrosDisponiblesProgramados = await r4.json();
+      populateFilter(tipoProgFilterEl, filtrosDisponiblesProgramados.tipos_inventario, filtrosDisponiblesProgramados.tipos_inventario);
+      updateToggleButton('tipoProgFilter', 'tipoProgFilterBtn');
     }
     
     function populateFilter(selectEl, options, selectedValues = []) {
@@ -193,12 +213,13 @@
       selectEl.addEventListener('click', e => e.preventDefault());
     }
     
-    enableClickToggleSelection(sedeGlobalFilterEl); enableClickToggleSelection(responsableFilterEl); enableClickToggleSelection(estadoFilterEl); enableClickToggleSelection(tipoFilterEl); enableClickToggleSelection(errorFilterEl);
+    enableClickToggleSelection(sedeGlobalFilterEl); enableClickToggleSelection(responsableFilterEl); enableClickToggleSelection(estadoFilterEl); enableClickToggleSelection(tipoFilterEl); enableClickToggleSelection(errorFilterEl); enableClickToggleSelection(tipoProgFilterEl);
     sedeGlobalFilterEl.addEventListener("change", () => { updateToggleButton('sedeGlobalFilter', 'sedeGlobalFilterBtn'); aplicarFiltroSedeGlobal(); });
     responsableFilterEl.addEventListener("change", () => { updateToggleButton('responsableFilter', 'responsableFilterBtn'); aplicarFiltrosGrafica(); });
     estadoFilterEl.addEventListener("change", () => { updateToggleButton('estadoFilter', 'estadoFilterBtn'); aplicarFiltrosGraficaFiscal(); });
     tipoFilterEl.addEventListener("change", () => { updateToggleButton('tipoFilter', 'tipoFilterBtn'); aplicarFiltrosGraficaFiscal(); });
     errorFilterEl.addEventListener("change", () => { updateToggleButton('errorFilter', 'errorFilterBtn'); aplicarFiltrosGraficaErrores(); });
+    tipoProgFilterEl.addEventListener("change", () => { updateToggleButton('tipoProgFilter', 'tipoProgFilterBtn'); aplicarFiltrosGraficaProgramados(); });
     
     // Aplicar filtro global de tiempo
     async function aplicarFiltroGlobal() {
@@ -220,7 +241,7 @@
         delete filtrosGlobales.sedes;
       }
       // Actualizar todas las gráficas
-      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores()]);
+      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados()]);
     }
     
     // Aplicar filtros específicos de la gráfica OYMM (sin recargar todo)
@@ -248,8 +269,16 @@
       await actualizarGraficaErrores();
     }
     
+    // Aplicar filtros específicos de Programados vs Ejecutados
+    async function aplicarFiltrosGraficaProgramados() {
+      filtrosGraficaProgramados = {};
+      const tipos = getSelectedOptions(tipoProgFilterEl);
+      if (tipos.length > 0 && tipos.length < filtrosDisponiblesProgramados.tipos_inventario.length) filtrosGraficaProgramados.tipos_inventario = tipos.join(",");
+      await actualizarGraficaProgramados();
+    }
+    
     async function cargarDatos() {
-      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
+      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
     }
     
     function combinarFiltros() {
@@ -335,6 +364,42 @@
       };
       
       Plotly.newPlot('chartErrores', traces, layout, { responsive: true });
+    }
+    
+    async function actualizarGraficaProgramados() {
+      const filtros = { ...filtrosGlobales, ...filtrosGraficaProgramados };
+      const r = await fetch(`/api/programados/grafico/por-sede?${new URLSearchParams(filtros)}`), data = await r.json();
+      
+      const traces = [
+        {
+          x: data.sedes,
+          y: data.programados,
+          name: 'Programados',
+          type: 'bar',
+          marker: { color: '#3b82f6' },
+          text: data.programados.map(v => v.toLocaleString()),
+          textposition: 'outside'
+        },
+        {
+          x: data.sedes,
+          y: data.ejecutados,
+          name: 'Ejecutados',
+          type: 'bar',
+          marker: { color: '#10b981' },
+          text: data.ejecutados.map(v => v.toLocaleString()),
+          textposition: 'outside'
+        }
+      ];
+      
+      const layout = {
+        barmode: 'group',
+        xaxis: { title: 'Sede', tickangle: -45 },
+        yaxis: { title: 'Cantidad', tickformat: ',.0f', separatethousands: true },
+        legend: { x: 0.5, y: -0.3, xanchor: 'center', orientation: 'h' },
+        margin: { t: 30, b: 120, l: 80, r: 80 }
+      };
+      
+      Plotly.newPlot('chartProgramados', traces, layout, { responsive: true });
     }
     
     function getSelectedOptions(selectEl) { return Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value); }

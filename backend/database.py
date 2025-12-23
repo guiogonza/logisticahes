@@ -330,6 +330,23 @@ def init_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_errores_sede ON errores(sede)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_errores_error ON errores(error)')
         
+        # Tabla para Programados vs Ejecutados
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS programados_ejecutados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mes TEXT,
+                sede TEXT,
+                tipo_inventario TEXT,
+                programados REAL,
+                ejecutados REAL,
+                indicador_programacion REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_prog_mes ON programados_ejecutados(mes)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_prog_sede ON programados_ejecutados(sede)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_prog_tipo ON programados_ejecutados(tipo_inventario)')
+        
         conn.commit()
         print("✅ Base de datos inicializada correctamente")
 

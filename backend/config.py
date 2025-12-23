@@ -39,6 +39,10 @@ EXCEL_FILES = {
     "errores": {
         "path": DATA_DIR / "ALMACENES" / "INDICADORES 2025.xlsx",
         "sheet": "ERRORES "
+    },
+    "programados_ejecutados": {
+        "path": DATA_DIR / "ALMACENES" / "INDICADORES 2025.xlsx",
+        "sheet": "PRO VS EJECU"
     }
 }
 

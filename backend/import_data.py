@@ -227,6 +227,11 @@ def main():
     except Exception as e:
         print(f"⚠️ Error en Errores: {e}")
     
+    try:
+        total += import_programados_ejecutados()
+    except Exception as e:
+        print(f"⚠️ Error en Programados vs Ejecutados: {e}")
+    
     print("=" * 60)
     print(f"✅ IMPORTACIÓN COMPLETADA - Total: {total:,} registros")
     print(f"📁 Base de datos: {DB_PATH}")
@@ -894,6 +899,75 @@ def import_errores():
         
     except Exception as e:
         print(f"❌ Error importando Errores: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def import_programados_ejecutados():
+    """Importar datos de Programados vs Ejecutados"""
+    config = EXCEL_FILES["programados_ejecutados"]
+    print(f"📂 Leyendo {config['path']} - Hoja: {config['sheet']}...")
+    
+    try:
+        df = pd.read_excel(config["path"], sheet_name=config["sheet"])
+        print(f"   Registros encontrados: {len(df)}")
+        
+        # Limpiar tabla
+        clear_table("programados_ejecutados")
+        
+        # Corregir typo en mes JUNIIO -> JUNIO
+        df['FECHA PROPUESTA'] = df['FECHA PROPUESTA'].str.replace('JUNIIO', 'JUNIO')
+        
+        # Preparar registros
+        records = []
+        for _, row in df.iterrows():
+            # Limpiar tipo inventario (tiene espacios al final)
+            tipo_inv = row.get('TIPO INVENTARIO ')
+            if pd.notna(tipo_inv):
+                tipo_inv = tipo_inv.strip()
+            
+            record = {
+                "mes": row.get('FECHA PROPUESTA'),
+                "sede": row.get('SEDE'),
+                "tipo_inventario": tipo_inv,
+                "programados": row.get('PROGRAMADOS'),
+                "ejecutados": row.get('EJECUTADOS'),
+                "indicador_programacion": row.get('Indicador Programacion')
+            }
+            
+            # Convertir NaN a None
+            for key, value in record.items():
+                if pd.isna(value):
+                    record[key] = None
+                elif isinstance(value, str):
+                    record[key] = fix_encoding(value.strip())
+            
+            records.append(record)
+        
+        # Insertar en BD
+        with get_db() as conn:
+            cursor = conn.cursor()
+            for record in records:
+                cursor.execute('''
+                    INSERT INTO programados_ejecutados 
+                    (mes, sede, tipo_inventario, programados, ejecutados, indicador_programacion)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    record["mes"],
+                    record["sede"],
+                    record["tipo_inventario"],
+                    record["programados"],
+                    record["ejecutados"],
+                    record["indicador_programacion"]
+                ))
+            conn.commit()
+        
+        print(f"✅ Programados vs Ejecutados: {len(records)} registros importados")
+        return len(records)
+        
+    except Exception as e:
+        print(f"❌ Error importando Programados vs Ejecutados: {e}")
         import traceback
         traceback.print_exc()
         raise
