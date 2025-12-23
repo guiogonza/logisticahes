@@ -13,7 +13,7 @@ MESES_MAP = {
     'JULIO': 7, 'AGOSTO': 8, 'SEPTIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12
 }
 
-def build_where_clause(fecha_inicio: Optional[str], fecha_fin: Optional[str], estado: Optional[str], tipo_inventario: Optional[str]):
+def build_where_clause(fecha_inicio: Optional[str], fecha_fin: Optional[str], sedes: Optional[str], estado: Optional[str], tipo_inventario: Optional[str]):
     """Construir cláusula WHERE y parámetros"""
     where_clause = "WHERE 1=1"
     params = []
@@ -50,6 +50,13 @@ def build_where_clause(fecha_inicio: Optional[str], fecha_fin: Optional[str], es
             placeholders = ",".join(["?" for _ in meses_validos])
             where_clause += f" AND mes IN ({placeholders})"
             params.extend(meses_validos)
+    
+    # Filtro de sedes
+    if sedes:
+        sedes_list = [s.strip() for s in sedes.split(',')]
+        placeholders = ','.join('?' * len(sedes_list))
+        where_clause += f" AND sede IN ({placeholders})"
+        params.extend(sedes_list)
     
     if estado:
         estado_list = estado.split(",")
@@ -90,13 +97,14 @@ async def get_filtros():
 async def get_kpis(
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
+    sedes: Optional[str] = None,
     estado: Optional[str] = None,
     tipo_inventario: Optional[str] = None
 ):
     """Obtener KPIs de Fiscal RU"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, estado, tipo_inventario)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, estado, tipo_inventario)
         
         # Calcular KPIs
         cursor.execute(f"""
@@ -124,13 +132,14 @@ async def get_kpis(
 async def get_por_sede(
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
+    sedes: Optional[str] = None,
     estado: Optional[str] = None,
     tipo_inventario: Optional[str] = None
 ):
     """Datos para gráfico por sede"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, estado, tipo_inventario)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, estado, tipo_inventario)
         
         cursor.execute(f"""
             SELECT 
@@ -160,13 +169,14 @@ async def get_por_sede(
 async def get_por_estado(
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
+    sedes: Optional[str] = None,
     estado: Optional[str] = None,
     tipo_inventario: Optional[str] = None
 ):
     """Datos para gráfico por estado"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, estado, tipo_inventario)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, estado, tipo_inventario)
         
         cursor.execute(f"""
             SELECT 
