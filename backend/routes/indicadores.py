@@ -7,17 +7,49 @@ from ..database import get_db
 
 router = APIRouter(prefix="/api/indicadores", tags=["Indicadores"])
 
+# Mapeo de meses en español a números
+MESES_MAP = {
+    'ENERO': 1, 'FEBRERO': 2, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6,
+    'JULIO': 7, 'AGOSTO': 8, 'SEPTIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12
+}
 
-def build_where_clause(meses: Optional[str], sedes: Optional[str], responsables: Optional[str]):
+def build_where_clause(fecha_inicio: Optional[str], fecha_fin: Optional[str], sedes: Optional[str], responsables: Optional[str]):
     """Construir cláusula WHERE y parámetros"""
     where_clause = "WHERE 1=1"
     params = []
     
-    if meses:
-        mes_list = meses.split(",")
-        placeholders = ",".join(["?" for _ in mes_list])
-        where_clause += f" AND mes IN ({placeholders})"
-        params.extend(mes_list)
+    if fecha_inicio and fecha_fin:
+        from datetime import datetime
+        # Manejar formato YYYY-MM del input type="month"
+        fecha_ini_obj = datetime.strptime(fecha_inicio, "%Y-%m")
+        fecha_fin_obj = datetime.strptime(fecha_fin, "%Y-%m")
+        mes_inicio = fecha_ini_obj.month
+        mes_fin = fecha_fin_obj.month
+        
+        # Obtener meses válidos en el rango
+        meses_validos = [k for k, v in MESES_MAP.items() if mes_inicio <= v <= mes_fin]
+        if meses_validos:
+            placeholders = ",".join(["?" for _ in meses_validos])
+            where_clause += f" AND mes IN ({placeholders})"
+            params.extend(meses_validos)
+    elif fecha_inicio:
+        from datetime import datetime
+        fecha_obj = datetime.strptime(fecha_inicio, "%Y-%m")
+        mes_inicio = fecha_obj.month
+        meses_validos = [k for k, v in MESES_MAP.items() if v >= mes_inicio]
+        if meses_validos:
+            placeholders = ",".join(["?" for _ in meses_validos])
+            where_clause += f" AND mes IN ({placeholders})"
+            params.extend(meses_validos)
+    elif fecha_fin:
+        from datetime import datetime
+        fecha_obj = datetime.strptime(fecha_fin, "%Y-%m")
+        mes_fin = fecha_obj.month
+        meses_validos = [k for k, v in MESES_MAP.items() if v <= mes_fin]
+        if meses_validos:
+            placeholders = ",".join(["?" for _ in meses_validos])
+            where_clause += f" AND mes IN ({placeholders})"
+            params.extend(meses_validos)
     
     if sedes:
         sede_list = sedes.split(",")
@@ -36,7 +68,8 @@ def build_where_clause(meses: Optional[str], sedes: Optional[str], responsables:
 
 @router.get("/datos")
 async def get_datos(
-    meses: Optional[str] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
     sedes: Optional[str] = None,
     responsables: Optional[str] = None,
     limit: int = Query(default=50000, le=150000)
@@ -44,7 +77,7 @@ async def get_datos(
     """Obtener datos de indicadores con filtros"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(meses, sedes, responsables)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, responsables)
         query = f"SELECT * FROM indicadores {where_clause} ORDER BY mes, sede LIMIT {limit}"
         cursor.execute(query, params)
         rows = cursor.fetchall()
@@ -57,10 +90,6 @@ async def get_filtros():
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # Obtener meses únicos
-        cursor.execute("SELECT DISTINCT mes FROM indicadores WHERE mes IS NOT NULL ORDER BY mes")
-        meses = [row[0] for row in cursor.fetchall()]
-        
         # Obtener sedes únicas
         cursor.execute("SELECT DISTINCT sede FROM indicadores WHERE sede IS NOT NULL ORDER BY sede")
         sedes = [row[0] for row in cursor.fetchall()]
@@ -70,7 +99,6 @@ async def get_filtros():
         responsables = [row[0] for row in cursor.fetchall()]
         
         return {
-            "meses": meses,
             "sedes": sedes,
             "responsables": responsables
         }
@@ -78,14 +106,15 @@ async def get_filtros():
 
 @router.get("/kpis")
 async def get_kpis(
-    meses: Optional[str] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
     sedes: Optional[str] = None,
     responsables: Optional[str] = None
 ):
     """Obtener KPIs de indicadores"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(meses, sedes, responsables)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, responsables)
         
         # Contar registros totales
         cursor.execute(f"SELECT COUNT(*) FROM indicadores {where_clause}", params)
@@ -125,14 +154,15 @@ async def get_kpis(
 
 @router.get("/grafico/inventario-por-sede")
 async def get_inventario_por_sede(
-    meses: Optional[str] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
     sedes: Optional[str] = None,
     responsables: Optional[str] = None
 ):
     """Datos para gráfico de inventario por sede"""
     with get_db() as conn:
         cursor = conn.cursor()
-        where_clause, params = build_where_clause(meses, sedes, responsables)
+        where_clause, params = build_where_clause(fecha_inicio, fecha_fin, sedes, responsables)
         
         cursor.execute(f"""
             SELECT sede, 
