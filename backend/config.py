@@ -23,6 +23,10 @@ EXCEL_FILES = {
             "oc_descuentos": "OC DESCUENTOS",
             "base_oc_generadas": "BASE OC GENERADAS"
         }
+    },
+    "indicadores": {
+        "path": DATA_DIR / "ALMACENES" / "INDICADORES 2025.xlsx",
+        "sheet": "OYMM"
     }
 }
 

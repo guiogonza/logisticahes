@@ -207,6 +207,11 @@ def main():
     except Exception as e:
         print(f"⚠️ Error en Compras: {e}")
     
+    try:
+        total += import_indicadores()
+    except Exception as e:
+        print(f"⚠️ Error en Indicadores: {e}")
+    
     print("=" * 60)
     print(f"✅ IMPORTACIÓN COMPLETADA - Total: {total:,} registros")
     print(f"📁 Base de datos: {DB_PATH}")
@@ -489,6 +494,106 @@ def import_compras():
         
     except Exception as e:
         print(f"❌ Error importando Compras: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def import_indicadores():
+    """Importar datos de Indicadores OYMM"""
+    config = EXCEL_FILES["indicadores"]
+    print(f"📂 Leyendo {config['path']}...")
+    
+    try:
+        df = pd.read_excel(config["path"], sheet_name=config["sheet"])
+        print(f"   Registros encontrados: {len(df)}")
+        
+        # Limpiar tabla
+        clear_table("indicadores")
+        
+        # Mapear columnas
+        column_mapping = {
+            "MES": "mes",
+            "SEDE": "sede",
+            "RESPONSABLE": "responsable",
+            "CODIGO": "codigo",
+            "DESCRIPCION": "descripcion",
+            "INVENTARIO INICIAL": "inventario_inicial",
+            "TOTAL ENTREGADO EN EL PERIODO": "total_entregado",
+            "TOTAL CONSUMOS EN EL PERIODO": "total_consumos",
+            "TOTAL REINTEGROS EN EL PERIODO": "total_reintegros",
+            "DENUNCIO FISCALIA POR HURTO EN EL PERIODO": "denuncio_fiscalia",
+            "INVENTARIO FINAL": "inventario_final",
+            "DIFERENCIA": "diferencia",
+            "PRECIO UNIDAD": "precio_unidad",
+            "PRECIO TOTAL": "precio_total",
+            "COSTO FINAL  INVENTARIO ": "costo_inventario_final",
+            "COSTO DIFERENCIA ": "costo_diferencia",
+            "OBJETIVO ": "objetivo"
+        }
+        
+        # Preparar datos
+        records = []
+        for _, row in df.iterrows():
+            record = {}
+            for excel_col, db_col in column_mapping.items():
+                value = row.get(excel_col)
+                
+                # Procesar valores especiales
+                if pd.isna(value):
+                    value = None
+                elif isinstance(value, str):
+                    value = fix_encoding(value.strip())
+                    # Convertir strings numéricos con formato especial
+                    if db_col in ['inventario_inicial', 'total_entregado', 'total_consumos', 
+                                  'total_reintegros', 'inventario_final', 'costo_inventario_final']:
+                        try:
+                            # Limpiar formato de números con puntos como separadores de miles
+                            value = str(value).replace('.', '').replace(',', '.')
+                            value = float(value) if value else 0.0
+                        except:
+                            value = 0.0
+                
+                record[db_col] = value
+            records.append(record)
+        
+        # Insertar en BD
+        with get_db() as conn:
+            cursor = conn.cursor()
+            for record in records:
+                cursor.execute('''
+                    INSERT INTO indicadores 
+                    (mes, sede, responsable, codigo, descripcion, inventario_inicial,
+                     total_entregado, total_consumos, total_reintegros, denuncio_fiscalia,
+                     inventario_final, diferencia, precio_unidad, precio_total,
+                     costo_inventario_final, costo_diferencia, objetivo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    record["mes"],
+                    record["sede"],
+                    record["responsable"],
+                    record["codigo"],
+                    record["descripcion"],
+                    record["inventario_inicial"],
+                    record["total_entregado"],
+                    record["total_consumos"],
+                    record["total_reintegros"],
+                    record["denuncio_fiscalia"],
+                    record["inventario_final"],
+                    record["diferencia"],
+                    record["precio_unidad"],
+                    record["precio_total"],
+                    record["costo_inventario_final"],
+                    record["costo_diferencia"],
+                    record["objetivo"]
+                ))
+            conn.commit()
+        
+        print(f"✅ Indicadores: {len(records)} registros importados")
+        return len(records)
+        
+    except Exception as e:
+        print(f"❌ Error importando Indicadores: {e}")
         import traceback
         traceback.print_exc()
         raise

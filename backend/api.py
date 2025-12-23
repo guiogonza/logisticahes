@@ -10,7 +10,7 @@ from .database import get_db, init_db
 from .config import BASE_DIR
 
 # Importar routers
-from .routes import costos, operatividad, compras
+from .routes import costos, operatividad, compras, indicadores
 
 # Rutas de carpetas
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -40,6 +40,7 @@ app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
 app.include_router(costos.router)
 app.include_router(operatividad.router)
 app.include_router(compras.router)
+app.include_router(indicadores.router)
 
 
 @app.on_event("startup")
@@ -73,6 +74,11 @@ async def operatividad_vehiculos_page():
 @app.get("/compras.html")
 async def compras_page():
     return FileResponse(str(FRONTEND_DIR / "compras.html"))
+
+
+@app.get("/indicadores.html")
+async def indicadores_page():
+    return FileResponse(str(FRONTEND_DIR / "indicadores.html"))
 
 
 # ============== ENDPOINTS DE ADMINISTRACIÓN ==============

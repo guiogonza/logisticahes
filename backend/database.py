@@ -199,6 +199,31 @@ def init_db():
             )
         ''')
         
+        # Tabla para Indicadores de Almacenes (OYMM)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS indicadores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mes TEXT,
+                sede TEXT,
+                responsable TEXT,
+                codigo INTEGER,
+                descripcion TEXT,
+                inventario_inicial REAL,
+                total_entregado REAL,
+                total_consumos REAL,
+                total_reintegros REAL,
+                denuncio_fiscalia INTEGER,
+                inventario_final REAL,
+                diferencia REAL,
+                precio_unidad REAL,
+                precio_total REAL,
+                costo_inventario_final REAL,
+                costo_diferencia REAL,
+                objetivo REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         # Índices para mejorar rendimiento
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_costos_fecha ON costos_mensuales(fecha)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_costos_catalogo ON costos_mensuales(catalogo)')
@@ -216,6 +241,11 @@ def init_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_oc_desc_tercero ON oc_descuentos(tercero_nombre)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_base_oc_fecha ON base_oc_generadas(fecha)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_base_oc_estado ON base_oc_generadas(estado)')
+        
+        # Índices para indicadores
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_indicadores_mes ON indicadores(mes)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_indicadores_sede ON indicadores(sede)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_indicadores_responsable ON indicadores(responsable)')
         
         conn.commit()
         print("✅ Base de datos inicializada correctamente")

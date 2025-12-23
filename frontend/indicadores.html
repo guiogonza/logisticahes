@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Inventario OYMM-MATERIALES</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; }
+    .sidebar { width: 280px; background: linear-gradient(180deg, #0a2540, #1c4e80); height: 100vh; padding: 1rem 0; box-shadow: 4px 0 20px rgba(0,0,0,0.3); position: fixed; display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-header { text-align: center; padding: 0 1rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-header img { width: 60px; margin-bottom: 0.3rem; }
+    .sidebar-header h2 { color: white; font-size: 0.95rem; font-weight: 600; margin: 0 0 0.8rem 0; }
+    .btn-back { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; font-size: 0.8rem; text-decoration: none; transition: all 0.3s; }
+    .btn-back:hover { background: rgba(255,255,255,0.25); }
+    .sidebar-filters { padding: 0.8rem 1rem; flex: 1; overflow-y: auto; }
+    .sidebar-filters h3 { color: rgba(255,255,255,0.9); font-size: 0.75rem; text-transform: uppercase; margin: 0 0 0.6rem 0; padding-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .filter-group { margin-bottom: 0.8rem; }
+    .filter-group label { display: block; color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 500; margin-bottom: 0.3rem; }
+    .filter-search { width: 100%; padding: 0.3rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; background: rgba(255,255,255,0.1); color: white; box-sizing: border-box; margin-bottom: 0.3rem; }
+    .filter-search::placeholder { color: rgba(255,255,255,0.5); }
+    select { width: 100%; height: 90px; padding: 0.2rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; background: rgba(255,255,255,0.95); box-sizing: border-box; }
+    .btn-filter { width: 100%; padding: 0.35rem 0.5rem; margin-top: 0.3rem; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: 500; background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
+    .btn-filter:hover { background: rgba(255,255,255,0.3); }
+    .sidebar-footer { padding: 0.6rem 1rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; }
+    .sidebar-footer p { color: rgba(255,255,255,0.5); font-size: 0.6rem; margin: 0; }
+    #status { color: rgba(255,255,255,0.8); font-size: 0.7rem; margin-top: 0.3rem; }
+    .main-wrapper { margin-left: 280px; flex: 1; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #15803d, #16a34a); color: #fff; padding: 1.2rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    header h1 { margin: 0; font-size: 1.6rem; }
+    header p { margin: 0.2rem 0 0; opacity: 0.9; }
+    .container { padding: 1.5rem 2rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+    .kpi { background: #fff; border-radius: 10px; padding: 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .kpi label { font-size: 0.75rem; text-transform: uppercase; color: #555; margin-bottom: 0.15rem; display: block; }
+    .kpi-value { font-size: 1.1rem; font-weight: 700; color: #16a34a; }
+    .chart-card { background: #fff; border-radius: 12px; padding: 0.5rem 0.6rem 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+    .chart-title { font-weight: 600; font-size: 1.1rem; margin: 0.2rem 0 0.5rem 0.2rem; color: #16a34a; }
+    .chart { width: 100%; height: 450px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <img src="img/logo.png" alt="HESEGO Logo" />
+      <h2>Indicadores OYMM</h2>
+      <a href="index.html" class="btn-back">← Regresar</a>
+    </div>
+    <div class="sidebar-filters">
+      <h3>🔍 Filtros</h3>
+      <div class="filter-group">
+        <label>Mes:</label>
+        <input type="text" class="filter-search" id="mesSearch" placeholder="Buscar..." onkeyup="filterSelect('mesFilter', this.value)" />
+        <select multiple id="mesFilter"></select>
+        <button class="btn-filter" id="mesFilterBtn" onclick="toggleSelectAll('mesFilter', 'mesFilterBtn')">Seleccionar todo</button>
+      </div>
+      <div class="filter-group">
+        <label>Sede:</label>
+        <input type="text" class="filter-search" id="sedeSearch" placeholder="Buscar..." onkeyup="filterSelect('sedeFilter', this.value)" />
+        <select multiple id="sedeFilter"></select>
+        <button class="btn-filter" id="sedeFilterBtn" onclick="toggleSelectAll('sedeFilter', 'sedeFilterBtn')">Seleccionar todo</button>
+      </div>
+      <div class="filter-group">
+        <label>Responsable:</label>
+        <input type="text" class="filter-search" id="responsableSearch" placeholder="Buscar..." onkeyup="filterSelect('responsableFilter', this.value)" />
+        <select multiple id="responsableFilter"></select>
+        <button class="btn-filter" id="responsableFilterBtn" onclick="toggleSelectAll('responsableFilter', 'responsableFilterBtn')">Seleccionar todo</button>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <p>© 2025 HESEGO</p>
+      <div id="status"></div>
+    </div>
+  </nav>
+  <div class="main-wrapper">
+    <header>
+      <h1>📊 INVENTARIO OYMM-MATERIALES</h1>
+      <p>Dashboard de análisis de inventarios y desviaciones</p>
+    </header>
+    <div class="container">
+      <div class="kpi-grid">
+        <div class="kpi"><label>Costo Inventario Final</label><div class="kpi-value" id="kpiCostoInventario">$0</div></div>
+        <div class="kpi"><label>Costo Diferencia</label><div class="kpi-value" id="kpiCostoDiferencia" style="color:#dc2626;">$0</div></div>
+        <div class="kpi"><label>Desviación Promedio</label><div class="kpi-value" id="kpiDesviacion">0%</div></div>
+        <div class="kpi"><label>Códigos Únicos</label><div class="kpi-value" id="kpiCodigos">0</div></div>
+        <div class="kpi"><label>Total Registros</label><div class="kpi-value" id="kpiRegistros">0</div></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">📈 Inventario OYMM por Sede</h3>
+        <div id="chartPrincipal" class="chart"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let filtrosDisponibles = {}, filtrosActuales = {};
+    const mesFilterEl = document.getElementById("mesFilter"), sedeFilterEl = document.getElementById("sedeFilter"), responsableFilterEl = document.getElementById("responsableFilter"), statusEl = document.getElementById("status");
+    
+    window.addEventListener('DOMContentLoaded', async () => { await cargarFiltros(); await cargarDatos(); });
+    
+    async function cargarFiltros() {
+      const r = await fetch('/api/indicadores/filtros'); filtrosDisponibles = await r.json();
+      populateFilter(mesFilterEl, filtrosDisponibles.meses, filtrosDisponibles.meses);
+      populateFilter(sedeFilterEl, filtrosDisponibles.sedes, filtrosDisponibles.sedes);
+      populateFilter(responsableFilterEl, filtrosDisponibles.responsables, filtrosDisponibles.responsables);
+      updateToggleButton('mesFilter', 'mesFilterBtn'); updateToggleButton('sedeFilter', 'sedeFilterBtn'); updateToggleButton('responsableFilter', 'responsableFilterBtn');
+    }
+    
+    function populateFilter(selectEl, options, selectedValues = []) {
+      selectEl.innerHTML = ""; options.forEach(val => { const opt = document.createElement("option"); opt.value = val; opt.textContent = val; opt.selected = selectedValues.includes(val); selectEl.appendChild(opt); });
+    }
+    
+    function enableClickToggleSelection(selectEl) {
+      selectEl.addEventListener('mousedown', e => { e.preventDefault(); if (e.target.tagName === 'OPTION') { e.target.selected = !e.target.selected; selectEl.dispatchEvent(new Event('change')); } });
+      selectEl.addEventListener('click', e => e.preventDefault());
+    }
+    
+    enableClickToggleSelection(mesFilterEl); enableClickToggleSelection(sedeFilterEl); enableClickToggleSelection(responsableFilterEl);
+    mesFilterEl.addEventListener("change", () => { updateToggleButton('mesFilter', 'mesFilterBtn'); aplicarFiltrosDinamicos(); });
+    sedeFilterEl.addEventListener("change", () => { updateToggleButton('sedeFilter', 'sedeFilterBtn'); aplicarFiltrosDinamicos(); });
+    responsableFilterEl.addEventListener("change", () => { updateToggleButton('responsableFilter', 'responsableFilterBtn'); aplicarFiltrosDinamicos(); });
+    
+    async function aplicarFiltrosDinamicos() {
+      filtrosActuales = {};
+      const meses = getSelectedOptions(mesFilterEl), sedes = getSelectedOptions(sedeFilterEl), resp = getSelectedOptions(responsableFilterEl);
+      if (meses.length > 0 && meses.length < filtrosDisponibles.meses.length) filtrosActuales.meses = meses.join(",");
+      if (sedes.length > 0 && sedes.length < filtrosDisponibles.sedes.length) filtrosActuales.sedes = sedes.join(",");
+      if (resp.length > 0 && resp.length < filtrosDisponibles.responsables.length) filtrosActuales.responsables = resp.join(",");
+      await cargarDatos();
+    }
+    
+    async function cargarDatos() {
+      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
+    }
+    
+    async function actualizarKPIs() {
+      const r = await fetch(`/api/indicadores/kpis?${new URLSearchParams(filtrosActuales)}`), kpis = await r.json();
+      document.getElementById('kpiCostoInventario').textContent = formatMoney(kpis.costo_inventario_final);
+      document.getElementById('kpiCostoDiferencia').textContent = formatMoney(kpis.costo_diferencia);
+      document.getElementById('kpiDesviacion').textContent = kpis.desviacion_promedio.toFixed(2) + '%';
+      document.getElementById('kpiCodigos').textContent = kpis.codigos_unicos.toLocaleString();
+      document.getElementById('kpiRegistros').textContent = kpis.total_registros.toLocaleString();
+    }
+    
+    async function actualizarGraficas() {
+      const r = await fetch(`/api/indicadores/grafico/inventario-por-sede?${new URLSearchParams(filtrosActuales)}`), data = await r.json();
+      const sedes = data.map(d => d.sede), costosInv = data.map(d => d.costo_inventario), costosDif = data.map(d => d.costo_diferencia), desv = data.map(d => d.desviacion_promedio);
+      const traces = [
+        { x: sedes, y: costosInv, name: 'Costo Inventario', type: 'bar', marker: { color: '#16a34a' } },
+        { x: sedes, y: costosDif, name: 'Costo Diferencia', type: 'bar', marker: { color: '#dc2626' } },
+        { x: sedes, y: desv, name: 'Desviación %', type: 'scatter', mode: 'lines+markers', yaxis: 'y2', line: { color: '#f59e0b', width: 3 }, marker: { size: 8, color: '#f59e0b' } }
+      ];
+      const layout = { barmode: 'group', xaxis: { title: 'Sede' }, yaxis: { title: 'Costo ($)', tickformat: '$,.0f', separatethousands: true }, yaxis2: { title: 'Desviación (%)', overlaying: 'y', side: 'right', tickformat: '.2f', showgrid: false }, legend: { x: 0.5, y: -0.2, xanchor: 'center', orientation: 'h' }, margin: { t: 30, b: 80, l: 150, r: 80 } };
+      Plotly.newPlot('chartPrincipal', traces, layout, { responsive: true });
+    }
+    
+    function getSelectedOptions(selectEl) { return Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value); }
+    function filterSelect(selectId, searchText) { const selectEl = document.getElementById(selectId), options = Array.from(selectEl.options), lower = searchText.toLowerCase(); options.forEach(opt => opt.style.display = opt.text.toLowerCase().includes(lower) ? "" : "none"); }
+    function toggleSelectAll(selectId, btnId) { const selectEl = document.getElementById(selectId), btn = document.getElementById(btnId), visible = Array.from(selectEl.options).filter(o => o.style.display !== "none"), allSel = visible.every(o => o.selected); visible.forEach(o => o.selected = !allSel); btn.textContent = allSel ? "Seleccionar todo" : "Deseleccionar todo"; selectEl.dispatchEvent(new Event('change')); }
+    function updateToggleButton(selectId, btnId) { const selectEl = document.getElementById(selectId), buttonEl = document.getElementById(btnId), visible = Array.from(selectEl.options).filter(o => o.style.display !== "none"), allSel = visible.length > 0 && visible.every(o => o.selected); buttonEl.textContent = allSel ? 'Deseleccionar todo' : 'Seleccionar todo'; }
+    function setStatus(msg) { statusEl.textContent = msg || ""; }
+    function formatMoney(value) { if (value == null || isNaN(value)) return "$0"; const absVal = Math.abs(value); let suffix = "", display = absVal; if (absVal >= 1e9) { display = absVal / 1e9; suffix = "B"; } else if (absVal >= 1e6) { display = absVal / 1e6; suffix = "M"; } else if (absVal >= 1e3) { display = absVal / 1e3; suffix = "K"; } return (value < 0 ? "-$" : "$") + display.toFixed(1) + suffix; }
+  </script>
+</body>
+</html>
