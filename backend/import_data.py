@@ -232,6 +232,11 @@ def main():
     except Exception as e:
         print(f"⚠️ Error en Programados vs Ejecutados: {e}")
     
+    try:
+        total += import_gestion()
+    except Exception as e:
+        print(f"⚠️ Error en Gestión Proceso: {e}")
+    
     print("=" * 60)
     print(f"✅ IMPORTACIÓN COMPLETADA - Total: {total:,} registros")
     print(f"📁 Base de datos: {DB_PATH}")
@@ -968,6 +973,93 @@ def import_programados_ejecutados():
         
     except Exception as e:
         print(f"❌ Error importando Programados vs Ejecutados: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+def import_gestion():
+    """Importar datos de Gestión Proceso"""
+    config = EXCEL_FILES["gestion"]
+    print(f"📂 Leyendo {config['path']}, hoja: {config['sheet']}...")
+    
+    try:
+        df = pd.read_excel(config["path"], sheet_name=config["sheet"])
+        print(f"   Registros encontrados: {len(df)}")
+        
+        # Limpiar espacios en nombres de columnas
+        df.columns = df.columns.str.strip()
+        
+        # Limpiar tabla
+        clear_table("gestion")
+        
+        # Limpiar y transformar datos
+        for col in df.select_dtypes(include=['object']).columns:
+            if col in df.columns:
+                df[col] = df[col].str.strip() if hasattr(df[col], 'str') else df[col]
+        
+        # Convertir DIAS y DIAS RESPUESTA a numérico (reemplazar '-' por None)
+        df['DIAS'] = pd.to_numeric(df['DIAS'], errors='coerce')
+        df['DIAS RESPUESTA'] = pd.to_numeric(df['DIAS RESPUESTA'], errors='coerce')
+        
+        # Convertir fechas a string formato ISO
+        df['Fecha Ejecución Invetario'] = pd.to_datetime(df['Fecha Ejecución Invetario'], errors='coerce').dt.strftime('%Y-%m-%d')
+        df['Fecha Reporte Operaciones'] = pd.to_datetime(df['Fecha Reporte Operaciones'], errors='coerce').dt.strftime('%Y-%m-%d')
+        df['FECHA RESPUESTA'] = pd.to_datetime(df['FECHA RESPUESTA'], errors='coerce').dt.strftime('%Y-%m-%d')
+        
+        # Preparar registros
+        records = []
+        for _, row in df.iterrows():
+            records.append({
+                "mes": row.get("MES"),
+                "sede": row.get("SEDE"),
+                "tipo_inventario": row.get("TIPO INVENTARIO"),
+                "almacenista": row.get("ALMACENISTA"),
+                "fecha_ejecucion_inventario": row.get("Fecha Ejecución Invetario") if pd.notna(row.get("Fecha Ejecución Invetario")) else None,
+                "fecha_reporte_operaciones": row.get("Fecha Reporte Operaciones") if pd.notna(row.get("Fecha Reporte Operaciones")) else None,
+                "dias": int(row.get("DIAS")) if pd.notna(row.get("DIAS")) else None,
+                "indicador_inventario": row.get("Indicador Inventario"),
+                "area": row.get("AREA"),
+                "responsable": row.get("RESPONSABLE"),
+                "fecha_respuesta": row.get("FECHA RESPUESTA") if pd.notna(row.get("FECHA RESPUESTA")) else None,
+                "dias_respuesta": int(row.get("DIAS RESPUESTA")) if pd.notna(row.get("DIAS RESPUESTA")) else None,
+                "indicador_respuesta": row.get("Indicador respuesta")
+            })
+        
+        # Insertar en BD
+        with get_db() as conn:
+            cursor = conn.cursor()
+            for record in records:
+                cursor.execute('''
+                    INSERT INTO gestion (
+                        mes, sede, tipo_inventario, almacenista,
+                        fecha_ejecucion_inventario, fecha_reporte_operaciones,
+                        dias, indicador_inventario, area, responsable,
+                        fecha_respuesta, dias_respuesta, indicador_respuesta
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    record["mes"],
+                    record["sede"],
+                    record["tipo_inventario"],
+                    record["almacenista"],
+                    record["fecha_ejecucion_inventario"],
+                    record["fecha_reporte_operaciones"],
+                    record["dias"],
+                    record["indicador_inventario"],
+                    record["area"],
+                    record["responsable"],
+                    record["fecha_respuesta"],
+                    record["dias_respuesta"],
+                    record["indicador_respuesta"]
+                ))
+            conn.commit()
+        
+        print(f"✅ Gestión Proceso: {len(records)} registros importados")
+        return len(records)
+        
+    except Exception as e:
+        print(f"❌ Error importando Gestión Proceso: {e}")
         import traceback
         traceback.print_exc()
         raise

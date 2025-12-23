@@ -347,6 +347,31 @@ def init_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_prog_sede ON programados_ejecutados(sede)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_prog_tipo ON programados_ejecutados(tipo_inventario)')
         
+        # Tabla gestion (GESTION PROCESO)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS gestion (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mes TEXT,
+                sede TEXT,
+                tipo_inventario TEXT,
+                almacenista TEXT,
+                fecha_ejecucion_inventario DATE,
+                fecha_reporte_operaciones DATE,
+                dias INTEGER,
+                indicador_inventario TEXT,
+                area TEXT,
+                responsable TEXT,
+                fecha_respuesta DATE,
+                dias_respuesta INTEGER,
+                indicador_respuesta TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_gestion_mes ON gestion(mes)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_gestion_sede ON gestion(sede)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_gestion_tipo ON gestion(tipo_inventario)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_gestion_responsable ON gestion(responsable)')
+        
         conn.commit()
         print("✅ Base de datos inicializada correctamente")
 

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Leer la hoja GESTION
-excel_path = r"data\ALMACENES\ALMACENES - INDICADORES.xlsx"
+excel_path = r"data\ALMACENES\INDICADORES 2025.xlsx"
 df = pd.read_excel(excel_path, sheet_name="GESTION ")
 
 print("=" * 60)

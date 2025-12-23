@@ -172,11 +172,32 @@
         </div>
         <div id="chartProgramados" class="chart"></div>
       </div>
+      
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">⚙️ Gestión Proceso</h3>
+          <div class="chart-filters">
+            <div class="chart-filter-group">
+              <label>Tipo Inventario:</label>
+              <input type="text" class="filter-search" id="tipoGestionSearch" placeholder="Buscar..." onkeyup="filterSelect('tipoGestionFilter', this.value)" />
+              <select multiple id="tipoGestionFilter"></select>
+              <button class="btn-filter-chart" id="tipoGestionFilterBtn" onclick="toggleSelectAll('tipoGestionFilter', 'tipoGestionFilterBtn')">Seleccionar todo</button>
+            </div>
+            <div class="chart-filter-group">
+              <label>Responsable:</label>
+              <input type="text" class="filter-search" id="responsableGestionSearch" placeholder="Buscar..." onkeyup="filterSelect('responsableGestionFilter', this.value)" />
+              <select multiple id="responsableGestionFilter"></select>
+              <button class="btn-filter-chart" id="responsableGestionFilterBtn" onclick="toggleSelectAll('responsableGestionFilter', 'responsableGestionFilterBtn')">Seleccionar todo</button>
+            </div>
+          </div>
+        </div>
+        <div id="chartGestion" class="chart"></div>
+      </div>
     </div>
   </div>
   <script>
-    let filtrosDisponibles = {}, filtrosDisponiblesFiscal = {}, filtrosDisponiblesErrores = {}, filtrosDisponiblesProgramados = {}, filtrosGlobales = {}, filtrosGrafica = {}, filtrosGraficaFiscal = {}, filtrosGraficaErrores = {}, filtrosGraficaProgramados = {};
-    const fechaInicioEl = document.getElementById("fechaInicio"), fechaFinEl = document.getElementById("fechaFin"), sedeGlobalFilterEl = document.getElementById("sedeGlobalFilter"), responsableFilterEl = document.getElementById("responsableFilter"), estadoFilterEl = document.getElementById("estadoFilter"), tipoFilterEl = document.getElementById("tipoFilter"), errorFilterEl = document.getElementById("errorFilter"), tipoProgFilterEl = document.getElementById("tipoProgFilter"), statusEl = document.getElementById("status");
+    let filtrosDisponibles = {}, filtrosDisponiblesFiscal = {}, filtrosDisponiblesErrores = {}, filtrosDisponiblesProgramados = {}, filtrosDisponiblesGestion = {}, filtrosGlobales = {}, filtrosGrafica = {}, filtrosGraficaFiscal = {}, filtrosGraficaErrores = {}, filtrosGraficaProgramados = {}, filtrosGraficaGestion = {};
+    const fechaInicioEl = document.getElementById("fechaInicio"), fechaFinEl = document.getElementById("fechaFin"), sedeGlobalFilterEl = document.getElementById("sedeGlobalFilter"), responsableFilterEl = document.getElementById("responsableFilter"), estadoFilterEl = document.getElementById("estadoFilter"), tipoFilterEl = document.getElementById("tipoFilter"), errorFilterEl = document.getElementById("errorFilter"), tipoProgFilterEl = document.getElementById("tipoProgFilter"), tipoGestionFilterEl = document.getElementById("tipoGestionFilter"), responsableGestionFilterEl = document.getElementById("responsableGestionFilter"), statusEl = document.getElementById("status");
     
     window.addEventListener('DOMContentLoaded', async () => { await cargarFiltros(); await cargarDatos(); });
     
@@ -202,6 +223,12 @@
       const r4 = await fetch('/api/programados/filtros'); filtrosDisponiblesProgramados = await r4.json();
       populateFilter(tipoProgFilterEl, filtrosDisponiblesProgramados.tipos_inventario, filtrosDisponiblesProgramados.tipos_inventario);
       updateToggleButton('tipoProgFilter', 'tipoProgFilterBtn');
+      
+      // Filtros para Gestión Proceso
+      const r5 = await fetch('/api/gestion/filtros'); filtrosDisponiblesGestion = await r5.json();
+      populateFilter(tipoGestionFilterEl, filtrosDisponiblesGestion.tipos_inventario, filtrosDisponiblesGestion.tipos_inventario);
+      populateFilter(responsableGestionFilterEl, filtrosDisponiblesGestion.responsables, filtrosDisponiblesGestion.responsables);
+      updateToggleButton('tipoGestionFilter', 'tipoGestionFilterBtn'); updateToggleButton('responsableGestionFilter', 'responsableGestionFilterBtn');
     }
     
     function populateFilter(selectEl, options, selectedValues = []) {
@@ -213,13 +240,15 @@
       selectEl.addEventListener('click', e => e.preventDefault());
     }
     
-    enableClickToggleSelection(sedeGlobalFilterEl); enableClickToggleSelection(responsableFilterEl); enableClickToggleSelection(estadoFilterEl); enableClickToggleSelection(tipoFilterEl); enableClickToggleSelection(errorFilterEl); enableClickToggleSelection(tipoProgFilterEl);
+    enableClickToggleSelection(sedeGlobalFilterEl); enableClickToggleSelection(responsableFilterEl); enableClickToggleSelection(estadoFilterEl); enableClickToggleSelection(tipoFilterEl); enableClickToggleSelection(errorFilterEl); enableClickToggleSelection(tipoProgFilterEl); enableClickToggleSelection(tipoGestionFilterEl); enableClickToggleSelection(responsableGestionFilterEl);
     sedeGlobalFilterEl.addEventListener("change", () => { updateToggleButton('sedeGlobalFilter', 'sedeGlobalFilterBtn'); aplicarFiltroSedeGlobal(); });
     responsableFilterEl.addEventListener("change", () => { updateToggleButton('responsableFilter', 'responsableFilterBtn'); aplicarFiltrosGrafica(); });
     estadoFilterEl.addEventListener("change", () => { updateToggleButton('estadoFilter', 'estadoFilterBtn'); aplicarFiltrosGraficaFiscal(); });
     tipoFilterEl.addEventListener("change", () => { updateToggleButton('tipoFilter', 'tipoFilterBtn'); aplicarFiltrosGraficaFiscal(); });
     errorFilterEl.addEventListener("change", () => { updateToggleButton('errorFilter', 'errorFilterBtn'); aplicarFiltrosGraficaErrores(); });
     tipoProgFilterEl.addEventListener("change", () => { updateToggleButton('tipoProgFilter', 'tipoProgFilterBtn'); aplicarFiltrosGraficaProgramados(); });
+    tipoGestionFilterEl.addEventListener("change", () => { updateToggleButton('tipoGestionFilter', 'tipoGestionFilterBtn'); aplicarFiltrosGraficaGestion(); });
+    responsableGestionFilterEl.addEventListener("change", () => { updateToggleButton('responsableGestionFilter', 'responsableGestionFilterBtn'); aplicarFiltrosGraficaGestion(); });
     
     // Aplicar filtro global de tiempo
     async function aplicarFiltroGlobal() {
@@ -241,7 +270,7 @@
         delete filtrosGlobales.sedes;
       }
       // Actualizar todas las gráficas
-      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados()]);
+      await Promise.all([actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados(), actualizarGraficaGestion()]);
     }
     
     // Aplicar filtros específicos de la gráfica OYMM (sin recargar todo)
@@ -277,8 +306,18 @@
       await actualizarGraficaProgramados();
     }
     
+    // Aplicar filtros específicos de Gestión Proceso
+    async function aplicarFiltrosGraficaGestion() {
+      filtrosGraficaGestion = {};
+      const tipos = getSelectedOptions(tipoGestionFilterEl);
+      const responsables = getSelectedOptions(responsableGestionFilterEl);
+      if (tipos.length > 0 && tipos.length < filtrosDisponiblesGestion.tipos_inventario.length) filtrosGraficaGestion.tipos_inventario = tipos.join(",");
+      if (responsables.length > 0 && responsables.length < filtrosDisponiblesGestion.responsables.length) filtrosGraficaGestion.responsables = responsables.join(",");
+      await actualizarGraficaGestion();
+    }
+    
     async function cargarDatos() {
-      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
+      setStatus('🔄 Cargando...'); await Promise.all([actualizarKPIs(), actualizarGraficas(), actualizarGraficaFiscalRU(), actualizarGraficaBrigadas(), actualizarGraficaErrores(), actualizarGraficaProgramados(), actualizarGraficaGestion()]); setStatus('✅ OK'); setTimeout(() => setStatus(''), 2000);
     }
     
     function combinarFiltros() {
@@ -400,6 +439,42 @@
       };
       
       Plotly.newPlot('chartProgramados', traces, layout, { responsive: true });
+    }
+    
+    async function actualizarGraficaGestion() {
+      const filtros = { ...filtrosGlobales, ...filtrosGraficaGestion };
+      const r = await fetch(`/api/gestion/grafico/por-sede?${new URLSearchParams(filtros)}`), data = await r.json();
+      
+      const traces = [
+        {
+          x: data.sedes,
+          y: data.dentro_plazo,
+          name: 'Dentro del plazo',
+          type: 'bar',
+          marker: { color: '#10b981' },
+          text: data.dentro_plazo.map(v => v.toLocaleString()),
+          textposition: 'outside'
+        },
+        {
+          x: data.sedes,
+          y: data.fuera_plazo,
+          name: 'Fuera del plazo',
+          type: 'bar',
+          marker: { color: '#ef4444' },
+          text: data.fuera_plazo.map(v => v.toLocaleString()),
+          textposition: 'outside'
+        }
+      ];
+      
+      const layout = {
+        barmode: 'stack',
+        xaxis: { title: 'Sede', tickangle: -45 },
+        yaxis: { title: 'Cantidad de Registros', tickformat: ',.0f', separatethousands: true },
+        legend: { x: 0.5, y: -0.3, xanchor: 'center', orientation: 'h' },
+        margin: { t: 30, b: 120, l: 80, r: 80 }
+      };
+      
+      Plotly.newPlot('chartGestion', traces, layout, { responsive: true });
     }
     
     function getSelectedOptions(selectEl) { return Array.from(selectEl.options).filter(opt => opt.selected).map(opt => opt.value); }
